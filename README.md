@@ -58,6 +58,8 @@ pnpm db:seed
 pnpm dev          # web: 5173, api: 3001
 ```
 
+> 本机当前 `HTTPS_PROXY` 指向不可用端口。若 `pnpm` 报 `ECONNREFUSED`，改用 `.\scripts\pnpm.ps1 install`（或 `scripts\pnpm.cmd`），该包装脚本只清空当前进程的代理变量。
+
 生产演示：
 
 ```bash

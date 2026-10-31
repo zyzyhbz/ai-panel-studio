@@ -151,14 +151,98 @@
 
 ## 4. G1 出口标准
 
-- [ ] 四个角色都提交设计输入
-- [ ] API/SSE/ER 的阻塞性问题已修复
-- [ ] AI 行为规范与 PRD 的 AR 对齐
-- [ ] 前端页面/状态与 FR 对齐
-- [ ] QA 用例矩阵覆盖所有 P0 AC
-- [ ] PM 发布契约 v1.0 冻结通知
+- [x] 四个角色都提交设计输入
+- [x] API/SSE/ER 的阻塞性问题已裁决（见 [06-G1契约决议](06-G1契约决议.md)）
+- [x] AI 行为规范与 PRD 的 AR 对齐
+- [x] 前端页面/状态与 FR 对齐
+- [x] QA 用例矩阵覆盖所有 P0 AC
+- [x] PM 发布契约 v1.0 冻结通知
 
-## 5. G2 预告（契约冻结后）
+> **G1 已完成，契约 v1.0 以 [06-G1契约决议](06-G1契约决议.md) 为准。** 旧版 API/SSE/ER 是基线，冲突处以 06 为准。
+
+## 5. G2 任务（契约冻结后）
+
+### PM-02：单仓脚手架
+
+- 根 `package.json`、pnpm workspace、tsconfig、Vite/Fastify 骨架
+- 固定 Node 24.20.0；`scripts/pnpm.ps1` 安装依赖
+- `allowBuilds: better-sqlite3/esbuild/@tailwindcss/oxide`
+- 一个命令启动：`pnpm dev`
+- 出口：web 5173 / api 3001 可访问，health 返回 mock
+
+### AI-02：agent 包与 prompt v1
+
+- `packages/agent`：`PromptSpec`、prompt builders、context assembler、schema、policy、mock client
+- 不直接读 Key、不直接 fetch 真实 API；真实 transport 由后端注入
+- 补全 P-ROSTER / P-INSIGHT / P-SUMMARY 全文
+- `docs/prompts/runtime/` 与 `docs/prompts/devlog/`
+- 出口：mock eval 跑通 5 个议题，输出基线报告
+
+### BE-02：数据层与 mock
+
+- `apps/server`：migration 0001、`schema_migrations`、repositories、`appendEvent`
+- SQLite WAL、busy_timeout、短事务、CAS 状态转移
+- `LLM_MODE=mock` 默认；`real` 无 Key fail-fast
+- 出口：`GET /api/health` 返回 `dbReady:true`，5 条 seed 可查
+
+### BE-03：创建/阵容/详情 API
+
+- `POST /discussions`（`clientRequestId` 幂等）、`GET /discussions`、`GET /:id`、`regenerate`
+- `GET /state` 事件重放投影
+- 失败详情带 `discussionId/topic`；`Cache-Control: no-store`
+- 出口：接口测试通过
+
+### BE-04：SessionRunner + SSE
+
+- 状态机、轮次循环、`turn.started/message.delta/message.completed/turn.aborted`
+- `discussion.summarizing/failed/ended`
+- SSE 先订阅→补发→flush、`Last-Event-ID`、`stream.caught_up`、心跳、连接上限
+- `end` 3s 宽限、failed→summarizing 兜底
+- 出口：I1 事件序列不变式 + I5 断线补发绿灯
+
+### FE-02：前端骨架
+
+- 4 条路由：`/`、`/new`、`/d/:id`、`/d/:id/replay`
+- 设计 token、AppShell、Panel 独立滚动、响应式三档
+- 出口：空态/错误态/三档截图
+
+### FE-03：首页/创建/阵容
+
+- 首页列表 + 5s 轮询、创建表单 + `clientRequestId`、阵容确认
+- 出口：mock 全链路从首页到 confirm
+
+### FE-04：演播厅
+
+- 直播 SSE 自管重连、delta 缓冲、transcript、专家状态、共识/分歧
+- 状态派生：idle / preparing / speaking
+- 出口：mock 8 轮直播可看
+
+### FE-05：回放与响应式
+
+- 时间线、播放/暂停/倍速/跳转、与直播共用 reducer
+- 出口：回放与直播终态一致
+
+### QA-02：测试骨架与 fixtures
+
+- Playwright + Chrome channel、fixtures（含坏样本）、mock 场景、DB 只读断言
+- 出口：首页 + 创建 2 条冒烟
+
+### QA-03/04：主链路与硬化
+
+- E2E-01 主链路、断线/多会话/回放一致性、压力、安全、三视图
+- 出口：门禁子集全绿，`QA-REPORT.md`
+
+## 6. G2 关键约束
+
+1. **LLM Adapter 归属**：接口/mock 在 `packages/agent`；真实 DeepSeek transport、超时、重试、Key 在 `apps/server/src/llm`。禁止两套生产 HTTP 客户端。
+2. **Node 24.20.0**：不要用 DSH 的 Electron pnpm shim；用 `scripts/pnpm.ps1`。
+3. **事件 payload 同源**：`events.payload_json` 就是 SSE `data` 对象，`GET /events` 原样返回。
+4. **每个 turn 有终态**：completed 或 aborted；每个会话有终态：ended 或 failed。
+5. **直播/回放共用 reducer**：前端不得写两套状态逻辑。
+6. **HTML 纯文本**：允许 `<`/`>` 输入，渲染转义，禁止 `dangerouslySetInnerHTML`。
+7. **不读 Key**：G2 默认 mock；配置阶段才读原始 Key 文件。
+
+## 7. G2 任务排期
 
 | ID | Owner | 任务 | 依赖 |
 | --- | --- | --- | --- |
@@ -177,7 +261,7 @@
 | FE-05 | 前端 | 回放 + 响应式 | FE-04 |
 | QA-04 | 测试 | 压力/断线/多会话/回放一致性 | BE-04/FE-05 |
 
-## 6. 交付格式
+## 8. 交付格式
 
 每个角色完成后，用固定格式回报：
 
@@ -193,7 +277,7 @@
 【下一步】
 ```
 
-## 7. 文件所有权提醒
+## 9. 文件所有权提醒
 
 - AI/Agent：`packages/agent/**`、`evals/**`、`docs/AGENT-BEHAVIOR.md`、`docs/prompts/**`
 - 后端：`apps/server/**`、`scripts/db/**`、`data/**`

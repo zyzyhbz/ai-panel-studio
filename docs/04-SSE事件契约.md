@@ -2,7 +2,9 @@
 
 - 日期：2026-10-31
 - 状态：草案，待 AI/后端/前端评审
-- 关联：[PRD](PRD.md)、[ER 图](ER.md)、[API 契约](03-API契约.md)
+- 关联：[PRD](PRD.md)、[ER 图](ER.md)、[API 契约](03-API契约.md)、[G1 契约决议](06-G1契约决议.md)
+
+> **v1.0 契约变更**：本文为 v0.1 基线，G1 裁决见 [06-G1契约决议](06-G1契约决议.md)。冲突以 06 为准；新增 `turn.aborted`、`discussion.summarizing`、`discussion.failed`、`stream.caught_up` 等事件。
 
 ## 1. 基本规则
 
