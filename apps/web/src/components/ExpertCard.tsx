@@ -1,7 +1,7 @@
-import type { Expert, Polarity } from "../../api/types";
-import type { ExpertStatus } from "../../domain/selectors";
-import { cn } from "../../lib/cn";
-import { readableInk, safeColor, tint } from "../../lib/color";
+import type { Expert, Polarity } from "../api/types";
+import type { ExpertStatus } from "../domain/selectors";
+import { cn } from "../lib/cn";
+import { readableInk, safeColor, tint } from "../lib/color";
 
 const POLARITY_ORDER: Polarity[] = [
   "strong_oppose",

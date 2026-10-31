@@ -1,4 +1,4 @@
-﻿import type { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { cn } from "../../lib/cn";
 
 export function Skeleton({ className }: { className?: string }) {
@@ -49,7 +49,7 @@ export function EmptyState({
 }
 
 export function ErrorState({
-  title = "鍑轰簡鐐归棶棰?,
+  title = "出了点问题",
   message,
   action,
   className,

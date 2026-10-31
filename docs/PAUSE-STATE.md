@@ -8,12 +8,14 @@
 
 - G0/G1 已完成并提交：PRD、技术选型、四角色 SOP、ER、API/SSE 基线、契约 v1.0 决议、四份设计评审。
 - 单仓脚手架已提交：Vite + React、Fastify、shared/agent 包、pnpm workspace、Node 24 + better-sqlite3 安装验证、health 烟测通过。
-- G2 进行中，工作区有未提交 WIP：
-  - 后端：`apps/server/src/{config,db,http,lib,llm,repositories,services,session}`、`types.ts`（未完成/未联调）
-  - 前端：`apps/web/src/{api,components,domain,features,lib,stores}`（未完成/未联调）
-  - AI/Agent：`packages/agent/src/{context,core,llm,parse,policy,prompts,schema}`（未完成）
+- G2 进行中，工作区 WIP 已通过验证：
+  - 后端：`apps/server/src/{config,db,http,lib,llm,repositories,services,session}`、`types.ts`（可编译，未联调）
+  - 前端：`apps/web/src/{api,components,domain,features,lib,stores}`（可编译，未联调）
+  - AI/Agent：`packages/agent/src/{context,core,llm,parse,policy,prompts,schema}`（可编译）
   - 测试：`e2e/` fixtures/helpers（fixtures 已生成，测试未跑）
-- 未做：依赖变更、类型检查、构建、联调、数据库迁移、E2E。
+- 已验证：`pnpm typecheck`、`pnpm test`（当前无测试文件）、`pnpm build` 全部通过。
+- 修复了两个断电前的半成品问题：`States.tsx` 的损坏中文字符串、`ExpertCard.tsx` 的错误相对导入。
+- 未做：数据库迁移、种子、前后端联调、E2E、真实模型 smoke。
 
 ## 恢复顺序（重要）
 
