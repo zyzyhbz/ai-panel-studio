@@ -1,0 +1,33 @@
+{
+  "name": "ai-panel-studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "pnpm@11.8.0",
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c blue,green \"pnpm --filter @ai-panel/server dev\" \"pnpm --filter @ai-panel/web dev\"",
+    "build": "pnpm --filter @ai-panel/server build && pnpm --filter @ai-panel/web build",
+    "start": "pnpm --filter @ai-panel/server start",
+    "test": "pnpm -r --if-present test",
+    "test:e2e": "playwright test",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "db:migrate": "pnpm --filter @ai-panel/server db:migrate",
+    "db:seed": "pnpm --filter @ai-panel/server db:seed",
+    "db:reset": "pnpm --filter @ai-panel/server db:reset",
+    "check:key": "node scripts/check-no-key.mjs"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.56.0",
+    "@types/node": "^24.0.0",
+    "autocannon": "^8.0.0",
+    "axe-core": "^4.14.0",
+    "concurrently": "^9.1.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vitest": "^4.0.0"
+  }
+}

@@ -12,12 +12,19 @@ param(
 
 $node = 'E:\nodejs-v24.20.0\node.exe'
 $pnpm = 'E:\Deepseek_Harness\app\resources\app\node_modules\pnpm\bin\pnpm.cjs'
+$nodeGyp = 'E:\nodejs-v24.20.0\node_modules\npm\node_modules\node-gyp\bin\node-gyp.js'
 
 if (-not (Test-Path -LiteralPath $node)) {
   $node = (Get-Command node -ErrorAction Stop).Source
 }
 if (-not (Test-Path -LiteralPath $pnpm)) {
   $pnpm = $null
+}
+
+$nodeDir = Split-Path -Parent $node
+$env:PATH = "$nodeDir;$env:PATH"
+if (Test-Path -LiteralPath $nodeGyp) {
+  $env:npm_config_node_gyp = $nodeGyp
 }
 
 $env:HTTP_PROXY = ''

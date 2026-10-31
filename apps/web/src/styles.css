@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+:root {
+  --color-stage: #0b0d10;
+  --color-panel: #12161c;
+  --color-ink: #f4f1ea;
+  --color-muted: #9aa3ad;
+  --color-line: rgba(244, 241, 234, 0.12);
+  --color-accent: #e8b04b;
+  --color-consensus: #4fc3a1;
+  --color-divergence: #e8735f;
+  --color-open: #a78bfa;
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background: var(--color-stage);
+  color: var(--color-ink);
+  font-family:
+    "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
