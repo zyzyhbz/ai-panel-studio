@@ -7,6 +7,23 @@
 
 > **v1.0 契约变更**：本文为 v0.1 基线，G1 裁决见 [06-G1契约决议](06-G1契约决议.md)。冲突以 06 为准；G2 实现按 06 的字段/事件/状态为准。
 
+## 0. v1.0 速查（实现优先）
+
+- 对外状态：`generating / ready / live / summarizing / ended / failed`，无 `draft`。
+- `POST /discussions` 必带 `clientRequestId`（UUID），24h 幂等；失败 `details` 带 `{discussionId, topic}`。
+- `GET /discussions?status=all|active|ended|failed`，也接受精确状态；`active` 含 generating/ready/live/summarizing。
+- 列表返回全部 experts、`errorCode`、`plannedTurns`、`turnCount`；排序 active 优先，再按 `updatedAt DESC, id ASC`。
+- 详情新增 `activeTurn`、`plannedTurns`、`maxTurns`、`error`；删除重复的顶层 `lastSeq`（只用 `discussion.lastSeq`）。
+- 专家新增 `focusArea`、`stanceAxis`、`polarity`；`focus` 仅作为本轮 `turnFocus`。
+- 消息新增 `charCount`、`degraded`、`targetMessageId?`、`references?`。
+- 洞察新增 `firstSeenTurn`；删除 `insights.status`；`updatedAt` 只在该条内容变化时更新。
+- 总结新增 `isFallback`；允许 `summary=null` 的 `ended`。
+- 新增 `GET /api/discussions/:id/state`（事件重放投影）与 `GET /api/health` 扩展字段。
+- `POST /:id/end` 允许 `failed`（仅有 messages 时）；在途发言 3s 宽限，超时 abort。
+- 所有 `/api` 响应 `Cache-Control: no-store`；错误体带 `requestId`，响应头 `X-Request-Id`。
+- topic 按纯文本接受（允许 `<`/`>`），长度按 Unicode 码点计；前端渲染转义。
+- 测试钩子：`x-qa-scenario` 仅 mock + 非 production；`LLM_MODE` 非法启动失败。
+
 ## 1. 通用约定
 
 - 编码：UTF-8；请求/响应 `application/json`，SSE 除外。

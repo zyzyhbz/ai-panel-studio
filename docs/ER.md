@@ -6,6 +6,38 @@
 
 > **v1.0 契约变更**：本文为 v0.1 基线，G1 裁决见 [06-G1契约决议](06-G1契约决议.md)。冲突以 06 为准；新增 stanceAxis/polarity/focusArea、message.degraded、summary.is_fallback、turn.aborted/discussion.failed 等。
 
+## 0. v1.0 schema 变更速查
+
+```text
+discussions   + planned_turns INTEGER NOT NULL
+              + max_turns     INTEGER NOT NULL
+              status CHECK in (generating,ready,live,summarizing,ended,failed)
+              error_code 枚举（INTERRUPTED/LLM_TIMEOUT/INVALID_OUTPUT/...）
+
+experts       + focus_area  TEXT NOT NULL      -- 原 focus 改名
+              + stance_axis TEXT NOT NULL
+              + polarity    TEXT NOT NULL CHECK in (strong_oppose..strong_support)
+              UNIQUE(discussion_id, color)
+
+messages      + char_count INTEGER NOT NULL
+              + degraded   INTEGER NOT NULL DEFAULT 0
+              + target_message_id TEXT NULL REFERENCES messages(id)
+              + references_json TEXT NULL       -- string[]，可选
+
+insights      - status
+              + first_seen_turn INTEGER NOT NULL
+              + content_hash    TEXT NOT NULL
+              UNIQUE(discussion_id, type, content_hash)
+
+summaries     + is_fallback INTEGER NOT NULL DEFAULT 0
+
+events        + turn.aborted / discussion.summarizing / discussion.failed
+              - discussion.created
+              UNIQUE(discussion_id, seq)
+
+schema_migrations 新增
+```
+
 ## 1. 设计原则
 
 1. **事件是事实源**：`events` 表记录会话内不可变事实；`messages`、`insights`、`summary` 是可重建投影。

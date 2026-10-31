@@ -1,0 +1,20 @@
+{
+  "$schema": "qa/llm-fixture@1",
+  "name": "roster/college-major",
+  "kind": "roster",
+  "scenario": "normal",
+  "negative": false,
+  "description": "议题「读大学选专业还要不要看就业率？」的主持人 + 3 位专家",
+  "expectOutcome": "ok",
+  "expectNotes": [
+    "颜色唯一",
+    "polarity 至少 3 类",
+    "1 主持 + 3 专家"
+  ],
+  "onExhausted": "last",
+  "steps": [
+    {
+      "content": "{\"experts\":[{\"id\":\"e_host\",\"role\":\"host\",\"name\":\"主持人·顾清\",\"profession\":\"教育观察主持\",\"title\":\"主笔\",\"stance\":\"中立，负责开场、追问、串联与收尾\",\"stanceAxis\":\"就业率导向 vs 产业趋势导向\",\"polarity\":\"neutral\",\"color\":\"#E5E7EB\",\"focusArea\":\"节奏与议题边界\",\"sortOrder\":0},{\"id\":\"e_01\",\"role\":\"expert\",\"name\":\"田野\",\"profession\":\"高校招生办主任\",\"title\":\"副研究员\",\"stance\":\"就业率是滞后指标，但不能不看\",\"stanceAxis\":\"就业率导向 vs 产业趋势导向\",\"polarity\":\"neutral\",\"color\":\"#3E6FD9\",\"focusArea\":\"招生数据与专业调整\",\"sortOrder\":1},{\"id\":\"e_02\",\"role\":\"expert\",\"name\":\"易安\",\"profession\":\"职业规划师\",\"title\":\"合伙人\",\"stance\":\"就业率是普通家庭最现实的风险对冲\",\"stanceAxis\":\"就业率导向 vs 产业趋势导向\",\"polarity\":\"support\",\"color\":\"#2F8F8A\",\"focusArea\":\"家庭决策与风险偏好\",\"sortOrder\":2},{\"id\":\"e_03\",\"role\":\"expert\",\"name\":\"郑铎\",\"profession\":\"产业研究员\",\"title\":\"高级分析师\",\"stance\":\"看就业率不如看产业迁移方向\",\"stanceAxis\":\"就业率导向 vs 产业趋势导向\",\"polarity\":\"oppose\",\"color\":\"#C2673F\",\"focusArea\":\"产业周期与人才缺口\",\"sortOrder\":3}]}"
+    }
+  ]
+}

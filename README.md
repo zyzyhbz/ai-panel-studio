@@ -4,9 +4,10 @@
 
 ## 状态
 
-**G1：行为与契约冻结中**。当前仓库包含产品/架构文档与契约草案，生产代码将在 G2 开始。
+**G2：并行开发中**。仓库已包含可运行的单仓脚手架（Vite + Fastify + shared/agent 包），四个角色正在实现主链路。
 
 - 截止：2026-11-02
+- 运行时：Node.js 24.20.0（`.nvmrc`）
 - 技术栈：React 19 + Vite + TypeScript / Fastify 5 + TypeScript / SQLite / SSE
 - 模型：DeepSeek API（默认 `deepseek-flash`，实时链路关闭 thinking）
 
@@ -58,7 +59,7 @@ pnpm db:seed
 pnpm dev          # web: 5173, api: 3001
 ```
 
-> 本机当前 `HTTPS_PROXY` 指向不可用端口。若 `pnpm` 报 `ECONNREFUSED`，改用 `.\scripts\pnpm.ps1 install`（或 `scripts\pnpm.cmd`），该包装脚本只清空当前进程的代理变量。
+> 本机当前 `HTTPS_PROXY` 指向不可用端口。若 `pnpm` 报 `ECONNREFUSED`，改用 `.\scripts\pnpm.ps1 install`（或 `scripts\pnpm.cmd`），该包装脚本只清空当前进程的代理变量。本机启动也用 `.\scripts\pnpm.ps1 dev`，确保 Node 24 + 正确 pnpm。
 
 生产演示：
 
@@ -79,6 +80,7 @@ pnpm start        # Fastify 托管 API + web/dist
 - [API 契约](docs/03-API契约.md)
 - [SSE 事件契约](docs/04-SSE事件契约.md)
 - [任务板](docs/TASKS.md)
+- [G1 契约决议 v1.0](docs/06-G1契约决议.md)
 - [工作流说明](docs/WORKFLOW.md)
 - [Prompt 记录](docs/PROMPT-LOG.md)
 

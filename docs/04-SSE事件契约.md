@@ -6,6 +6,33 @@
 
 > **v1.0 契约变更**：本文为 v0.1 基线，G1 裁决见 [06-G1契约决议](06-G1契约决议.md)。冲突以 06 为准；新增 `turn.aborted`、`discussion.summarizing`、`discussion.failed`、`stream.caught_up` 等事件。
 
+## 0. v1.0 事件速查
+
+| 事件 | 持久化 | v1.0 关键字段 |
+| --- | --- | --- |
+| `stream.ready` | 否 | `discussionId,status,fromSeq,lastSeq,retryMs` |
+| `stream.caught_up` | 否 | `discussionId,lastSeq` |
+| `roster.ready` | 是 | `experts[].focusArea/stanceAxis/polarity` |
+| `discussion.started` | 是 | `startedAt` |
+| `discussion.summarizing` | 是 | `reason:user/auto,startedAt` |
+| `turn.started` | 是 | `turnIndex,speakerId,messageId,intent,turnFocus,targetMessageId?,references?` |
+| `message.delta` | 否 | `messageId,speakerId,turnIndex?,delta` |
+| `message.completed` | 是 | `message.charCount,degraded,targetMessageId?,references?` |
+| `turn.aborted` | 是 | `turnIndex,speakerId,messageId?,reason,retryable` |
+| `insight.updated` | 是 | `insights[].firstSeenTurn`；`updatedAt` 只在内容变化时刷新 |
+| `summary.completed` | 是 | `summary.isFallback` |
+| `discussion.ended` | 是 | `endedAt` |
+| `discussion.failed` | 是 | `code,message,retryable,failedAt` |
+| `error` | 否 | `code,message,recoverable,requestId` |
+
+硬约束：
+
+- 每个 `turn.started` 后必须有 `message.completed` 或 `turn.aborted`。
+- `discussion.ended` / `discussion.failed` 是互斥终态，且必须是最后一条持久化事件。
+- `events.payload_json` 就是 SSE `data` 对象；`GET /events` 原样返回。
+- 终态后不重连；`stream.ready.status` 为 ended/failed 时客户端立即 close。
+- 单会话最多 8 个 SSE 连接；心跳 15s；`retry: 1000`。
+
 ## 1. 基本规则
 
 - 端点：`GET /api/discussions/:id/stream?after=<seq>`

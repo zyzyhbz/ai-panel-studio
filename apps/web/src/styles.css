@@ -1,35 +1,369 @@
 @import "tailwindcss";
 
-:root {
-  --color-stage: #0b0d10;
-  --color-panel: #12161c;
-  --color-ink: #f4f1ea;
-  --color-muted: #9aa3ad;
-  --color-line: rgba(244, 241, 234, 0.12);
-  --color-accent: #e8b04b;
-  --color-consensus: #4fc3a1;
+/* ------------------------------------------------------------------ *
+ * Design tokens (v1.0 — mirrored from docs/FRONTEND-PLAN.md §8)
+ * Tailwind v4: `@theme` emits the custom properties AND generates
+ * utilities such as `bg-stage-900` / `text-ink-2` / `border-line-1`.
+ * ------------------------------------------------------------------ */
+@theme {
+  /* Stage surfaces — near-black, slightly blue, never pure #000 */
+  --color-stage-1000: #05070a;
+  --color-stage-950: #080b10;
+  --color-stage-900: #0b0f15;
+  --color-stage-850: #11161f;
+  --color-stage-800: #171e29;
+
+  /* Lines */
+  --color-line-1: rgba(255, 255, 255, 0.07);
+  --color-line-2: rgba(255, 255, 255, 0.14);
+
+  /* Ink */
+  --color-ink-1: #edf1f7;
+  --color-ink-2: #b7c0cd;
+  --color-ink-3: #7e8896;
+  --color-ink-4: #58616e;
+
+  /* Semantic (reserved hues — experts must avoid these) */
+  --color-live: #f0b429;
+  --color-consensus: #34d399;
   --color-divergence: #e8735f;
   --color-open: #a78bfa;
-  color-scheme: dark;
+  --color-danger: #ff5c5c;
+
+  /* Breakpoints: 2xl is redefined to 1440px for the 3-column stage */
+  --breakpoint-2xl: 90rem;
+
+  /* Motion */
+  --ease-stage: cubic-bezier(0.16, 0.84, 0.24, 1);
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Fonts — no network fonts, local only */
+  --font-sans:
+    "Inter Tight", "Inter", -apple-system, "Segoe UI Variable", "Segoe UI",
+    "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans SC",
+    system-ui, sans-serif;
 }
 
-html,
-body,
-#root {
-  height: 100%;
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    /* Hard rule: the page itself never scrolls. Panels scroll instead. */
+    overflow: hidden;
+    overscroll-behavior: none;
+    background: var(--color-stage-1000);
+    color: var(--color-ink-1);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-live);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-live) 35%, transparent);
+    color: var(--color-ink-1);
+  }
+
+  /* Thin, always-visible scrollbars — a hidden scroller is a usability bug. */
+  .scroll-y {
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+  }
+
+  .scroll-y::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scroll-y::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+  }
+
+  .scroll-y::-webkit-scrollbar-track {
+    background: transparent;
+  }
 }
 
-body {
-  margin: 0;
-  overflow: hidden;
-  background: var(--color-stage);
-  color: var(--color-ink);
-  font-family:
-    "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
-}
+@layer components {
+  /* ---------------------------------------------------------------- *
+   * Stage shell — the single source of truth for the 3-tier layout.
+   * body never scrolls; each area owns its own scroll.
+   * ---------------------------------------------------------------- */
+  .studio-shell {
+    height: 100dvh;
+    min-height: 0;
+    display: grid;
+    background: var(--color-stage-1000);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "header"
+      "stage"
+      "tabbar";
+  }
 
-* {
-  box-sizing: border-box;
+  .studio-header {
+    grid-area: header;
+    min-width: 0;
+  }
+
+  .studio-rail {
+    grid-area: stage;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  .studio-stage {
+    grid-area: stage;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  .studio-insights {
+    grid-area: stage;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  .studio-footer {
+    grid-area: footer;
+    display: none;
+  }
+
+  .studio-tabbar {
+    grid-area: tabbar;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Mobile (<768): only the active tab panel is displayed. */
+  .studio-rail[data-tab-active="false"],
+  .studio-stage[data-tab-active="false"],
+  .studio-insights[data-tab-active="false"] {
+    display: none;
+  }
+
+  @media (min-width: 48rem) {
+    .studio-shell {
+      grid-template-columns: 92px minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      grid-template-areas:
+        "header header"
+        "rail   stage"
+        "footer footer";
+    }
+
+    .studio-rail,
+    .studio-stage,
+    .studio-insights {
+      display: flex;
+    }
+
+    .studio-rail {
+      flex-direction: column;
+    }
+
+    .studio-tabbar {
+      display: none;
+    }
+
+    .studio-footer {
+      display: flex;
+    }
+
+    /* Insights become an overlay drawer below 1440 — it must never
+       squeeze the transcript. */
+    .studio-insights {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: min(400px, 92vw);
+      z-index: 40;
+      background: var(--color-stage-900);
+      border-left: 1px solid var(--color-line-1);
+      transform: translateX(102%);
+      transition: transform 220ms var(--ease-out-soft);
+      will-change: transform;
+    }
+
+    .studio-insights[data-open="true"] {
+      transform: translateX(0);
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .studio-shell {
+      grid-template-columns: 264px minmax(0, 1fr);
+    }
+  }
+
+  @media (min-width: 90rem) {
+    .studio-shell {
+      grid-template-columns:
+        clamp(300px, 21vw, 360px)
+        minmax(0, 1fr)
+        clamp(320px, 24vw, 400px);
+      grid-template-areas:
+        "header header  header"
+        "rail   stage   insights"
+        "footer footer  footer";
+    }
+
+    .studio-insights {
+      position: static;
+      width: auto;
+      z-index: auto;
+      transform: none;
+      border-left: 1px solid var(--color-line-1);
+      transition: none;
+    }
+  }
+
+  /* Spotlight wash — only ONE large gradient in the whole app. */
+  .stage-backdrop::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+      radial-gradient(
+        ellipse 70% 42% at 50% -8%,
+        rgba(240, 180, 41, 0.1),
+        transparent 62%
+      ),
+      radial-gradient(
+        ellipse 120% 60% at 50% 118%,
+        rgba(0, 0, 0, 0.62),
+        transparent 70%
+      );
+  }
+
+  .panel {
+    min-height: 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background: color-mix(in srgb, var(--color-stage-900) 72%, transparent);
+    border-color: var(--color-line-1);
+  }
+
+  /* Speaking bars — the strongest "someone is talking" signal we can
+     render without audio. */
+  .speaking-bars span {
+    display: block;
+    width: 2px;
+    height: 100%;
+    border-radius: 999px;
+    background: currentColor;
+    transform-origin: center bottom;
+    animation: bar-pulse 880ms var(--ease-out-soft) infinite alternate;
+  }
+
+  .speaking-bars span:nth-child(2) {
+    animation-delay: 150ms;
+  }
+
+  .speaking-bars span:nth-child(3) {
+    animation-delay: 300ms;
+  }
+
+  @keyframes bar-pulse {
+    from {
+      transform: scaleY(0.32);
+      opacity: 0.55;
+    }
+    to {
+      transform: scaleY(1);
+      opacity: 1;
+    }
+  }
+
+  .live-dot {
+    animation: live-breathe 1800ms var(--ease-out-soft) infinite;
+  }
+
+  @keyframes live-breathe {
+    0%,
+    100% {
+      opacity: 1;
+      box-shadow: 0 0 0 0 currentColor;
+    }
+    50% {
+      opacity: 0.68;
+      box-shadow: 0 0 0 4px transparent;
+    }
+  }
+
+  .preparing-ring {
+    animation: prepping 2200ms var(--ease-out-soft) infinite;
+  }
+
+  @keyframes prepping {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 currentColor;
+      opacity: 0.9;
+    }
+    50% {
+      box-shadow: 0 0 0 3px transparent;
+      opacity: 0.55;
+    }
+  }
+
+  .msg-enter {
+    animation: msg-enter 260ms var(--ease-out-soft) both;
+  }
+
+  @keyframes msg-enter {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .insight-flash {
+    animation: insight-flash 1800ms var(--ease-out-soft);
+  }
+
+  @keyframes insight-flash {
+    from {
+      background: color-mix(in oklab, var(--color-live) 16%, transparent);
+    }
+    to {
+      background: transparent;
+    }
+  }
+
+  .edge-fade {
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 14px,
+      #000 calc(100% - 14px),
+      transparent 100%
+    );
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
