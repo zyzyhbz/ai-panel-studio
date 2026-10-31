@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
-import type { Db } from "./connection.js";
+import { resolve } from "node:path";
+import { openDb, type Db } from "./connection.js";
 import { LATEST_VERSION, MIGRATIONS } from "./migrations/index.js";
 
 export interface MigrateResult {
@@ -66,5 +67,26 @@ export function currentVersion(db: Db): number {
     return row?.v ?? 0;
   } catch {
     return 0;
+  }
+}
+
+const isCli = process.argv[1]?.replace(/\\/g, "/").endsWith("/db/migrate.ts") ?? false;
+
+if (isCli) {
+  const dbPath =
+    process.env.DATABASE_PATH ?? resolve(process.cwd(), "../../data/app.db");
+  const db = openDb({ path: dbPath });
+  try {
+    const result = migrate(db);
+    console.log(
+      JSON.stringify({
+        ok: true,
+        dbPath,
+        applied: result.applied,
+        currentVersion: result.currentVersion,
+      }),
+    );
+  } finally {
+    db.close();
   }
 }

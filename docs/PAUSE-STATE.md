@@ -14,8 +14,9 @@
   - AI/Agent：`packages/agent/src/{context,core,llm,parse,policy,prompts,schema}`（可编译）
   - 测试：`e2e/` fixtures/helpers（fixtures 已生成，测试未跑）
 - 已验证：`pnpm typecheck`、`pnpm test`（当前无测试文件）、`pnpm build` 全部通过。
-- 修复了两个断电前的半成品问题：`States.tsx` 的损坏中文字符串、`ExpertCard.tsx` 的错误相对导入。
-- 未做：数据库迁移、种子、前后端联调、E2E、真实模型 smoke。
+- 已验证：`pnpm db:migrate` 成功应用 migration 1，生成 `data/app.db`（126,976 bytes）。
+- 修复了两个断电前的半成品问题：`States.tsx` 的损坏中文字符串、`ExpertCard.tsx` 的错误相对导入；并补了 `migrate.ts` 的 CLI 入口。
+- 未做：种子、前后端联调、E2E、真实模型 smoke。
 
 ## 恢复顺序（重要）
 
