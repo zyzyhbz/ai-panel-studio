@@ -261,8 +261,8 @@ export function HomePage() {
     }
   };
 
-  const canArchive = (item: DiscussionListItem): boolean =>
-    Boolean(item.archivedAt) || item.status === "ended" || item.status === "failed";
+  // Archive is presentation-only and must also work while a discussion is live.
+  const canArchive = (_item: DiscussionListItem): boolean => true;
 
   const retry = () => {
     setStatus("loading");

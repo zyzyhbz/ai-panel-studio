@@ -37,7 +37,7 @@ function bubblePoint(anchor: SeatPoint): SeatPoint {
   // Host above / expert below: stop the bubble just below/above the card.
   return {
     x: anchor.x,
-    y: anchor.y - Math.sign(dy) * (7 + 1 + 7),
+    y: anchor.y - Math.sign(dy) * 17.5,
   };
 }
 
