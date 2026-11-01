@@ -85,21 +85,17 @@ export function normalizeRoster(
     degraded = true;
   }
 
-  const usedColors = new Set<ColorKey>();
+  const usedHex = new Set<string>([HOST_COLOR]);
   const experts: ExpertPersona[] = expertDrafts.map((personaDraft, index) => {
     const name = uniqueName(personaDraft.name, NAME_POOL, usedNames, () => {
       repaired = true;
     });
     usedNames.add(name);
 
-    let colorKey = personaDraft.colorKey;
-    if (usedColors.has(colorKey)) {
-      const next = nextFreeColor(usedColors);
-      warnings.push(`${name} 的颜色 ${colorKey} 重复，已改为 ${next}`);
-      colorKey = next;
+    const color = resolveColor(personaDraft, usedHex, name, warnings, () => {
       repaired = true;
-    }
-    usedColors.add(colorKey);
+    });
+    usedHex.add(color);
 
     return {
       id: `e_${index + 1}`,
@@ -111,7 +107,7 @@ export function normalizeRoster(
       stanceAxis: personaDraft.stanceAxis,
       polarity: personaDraft.polarity,
       focusArea: personaDraft.focusArea,
-      color: COLOR_PALETTE[colorKey].hex,
+      color,
     };
   });
 
@@ -234,11 +230,44 @@ function uniqueName(
   return generated;
 }
 
-function nextFreeColor(used: Set<ColorKey>): ColorKey {
+function nextFreeColor(used: Set<string>): ColorKey {
   for (const key of COLOR_KEYS) {
-    if (!used.has(key)) return key;
+    if (!used.has(COLOR_PALETTE[key].hex)) return key;
   }
   return COLOR_KEYS[0];
+}
+
+/**
+ * 颜色解析：优先调色板 key，其次接受十六进制（兼容既有 fixtures）。
+ * 重复或非法时退回调色板里第一个未用色。
+ */
+function resolveColor(
+  draft: PersonaDraft,
+  usedHex: Set<string>,
+  name: string,
+  warnings: string[],
+  onRepair: () => void,
+): string {
+  if (draft.colorKey) {
+    const hex = COLOR_PALETTE[draft.colorKey].hex;
+    if (!usedHex.has(hex)) return hex;
+    const next = nextFreeColor(usedHex);
+    warnings.push(`${name} 的颜色 ${draft.colorKey} 重复，已改为 ${next}`);
+    onRepair();
+    return COLOR_PALETTE[next].hex;
+  }
+  if (draft.color) {
+    const hex = draft.color.toUpperCase();
+    if (!usedHex.has(hex)) return hex;
+    const next = nextFreeColor(usedHex);
+    warnings.push(`${name} 的颜色 ${draft.color} 重复，已改为 ${next}`);
+    onRepair();
+    return COLOR_PALETTE[next].hex;
+  }
+  const next = nextFreeColor(usedHex);
+  warnings.push(`${name} 没有给颜色，已分配 ${next}`);
+  onRepair();
+  return COLOR_PALETTE[next].hex;
 }
 
 /** 模型完全不可用时的兜底阵容（degraded=true）。 */

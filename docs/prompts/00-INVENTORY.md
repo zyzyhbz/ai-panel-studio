@@ -1,10 +1,25 @@
-# Prompt 清单（运行时）v0.1
+# Prompt 清单（运行时）v1.0
 
-- 日期：2026-10-31
+- 日期：2026-11-01（v0.1 为 2026-10-31 草案）
 - Owner：AI/Agent 工程师
-- 状态：v1 草案。**只交清单 + 2 个骨架，不交五类最终稿**（最终稿在 AI-02 交付）
-- 关联：[Agent 行为规范](../AGENT-BEHAVIOR.md)、[PRD](../PRD.md) §7、[SSE 契约](../04-SSE事件契约.md)、[技术选型](../01-技术选型.md) §6
-- 模型基线：`deepseek-flash`，**thinking 关闭**（显式传 `thinking: {"type": "disabled"}` 或 provider 等价参数），`DEEPSEEK_MODEL` 可覆盖，**禁止硬编码**
+- 状态：**五类全部落地**。本文是索引；全文见 [`runtime/`](runtime/README.md)，代码实现见 `packages/agent/src/prompts/*.ts`
+- 关联：[Agent 行为规范](../AGENT-BEHAVIOR.md)、[AGENT-API](../AGENT-API.md)、[PRD](../PRD.md) §7、[SSE 契约](../04-SSE事件契约.md)、[技术选型](../01-技术选型.md) §6
+- 模型基线：`deepseek-flash`，**thinking 关闭**，`DEEPSEEK_MODEL` 可覆盖，**禁止硬编码**
+
+## 0.0 目录（已按 PM 裁决落地）
+
+```text
+docs/prompts/
+├── 00-INVENTORY.md      # 本文件：索引 + 参数基线 + 版本规则
+├── runtime/             # 生产运行时 prompt 全文（5 份 + README）
+│   ├── P-ROSTER.v1.0.0.md
+│   ├── P-DECIDE.v1.0.0.md
+│   ├── P-SPEECH.v1.0.0.md
+│   ├── P-INSIGHT.v1.0.0.md
+│   └── P-SUMMARY.v1.0.0.md
+└── devlog/              # 开发过程 prompt（题目要求 ≥5 段，PM 汇编进 PROMPT-LOG）
+    └── 01-g2-agent-package.md
+```
 
 ---
 
@@ -270,15 +285,16 @@ validateSpeech(text: string, decision: TurnDecision, recent: Message[]): SpeechC
 
 ---
 
-## 7. 未写全的三类（AI-02 交付）
+## 7. 另外三类（已于 AI-02 补全）
 
-| Prompt | 为什么现在不写 | 写作要点（先记下） |
+| Prompt | 全文 | 落地要点 |
 | --- | --- | --- |
-| `P-ROSTER` | 依赖"调色板 key 常量"和"姓名池"先定，否则 prompt 里的示例会返工 | 四维多样性写进"你必须做到"；给 1 个好坏对比（4 个同质专家 vs 4 个互补）；强制 JSON 示例；明确"不得用真实公众人物姓名" |
-| `P-INSIGHT` | 依赖 `existingInsights` 的注入格式（stable id 规则）与 `turn.aborted` 等契约改动 | 重点写"什么时候不许写"：单人证据不许写共识、没写出轴不许写分歧、数字必须能在原文找到；给 3 个反例 |
-| `P-SUMMARY` | 依赖"收尾发言"与"总结"的分工定型（见行为规范 §3.1） | 三段式、禁 JSON 痕迹、某类为空要明说、结尾给一句可带走的判断 |
+| `P-ROSTER` | [runtime/P-ROSTER](runtime/P-ROSTER.v1.0.0.md) | 四维差异（轴/极性/维度/风格）写进"你必须做到"；颜色二选一（`colorKey` 或 hex）；禁用真实公众人物姓名 |
+| `P-INSIGHT` | [runtime/P-INSIGHT](runtime/P-INSIGHT.v1.0.0.md) | 重点写"什么时候不许写"：单人证据不许写共识、没写出轴不许写分歧、数字必须能在原文找到；空快照合法 |
+| `P-SUMMARY` | [runtime/P-SUMMARY](runtime/P-SUMMARY.v1.0.0.md) | 三段式、禁 JSON 痕迹、某类为空要明说、结尾给一句可带走的判断 |
 
-交付时间：**AI-02（G2，契约 v1 冻结后）**。G1 只交清单与 2 个骨架，避免在契约未定时把 prompt 写死。
+另两份（[P-DECIDE](runtime/P-DECIDE.v1.0.0.md) / [P-SPEECH](runtime/P-SPEECH.v1.0.0.md)）以本文 §5/§6 的骨架为基础定稿，差异：
+候选顺序改为**稳定哈希打乱**；新增 `mediate` 的 `references` 要求；发言明确"纯文本、不套 JSON"并给出 8 种分型指令。
 
 ---
 

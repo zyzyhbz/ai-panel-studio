@@ -1,11 +1,11 @@
-import type { ChatMessage, LLMParams, PromptId, PromptKind, PromptSpec } from "../llm/types";
-import { DEFAULT_LLM_PARAMS, DEFAULT_TIMEOUTS } from "../llm/types";
+import type { PromptId, PromptSpec } from "../llm/types";
+import { DEFAULT_LLM_PARAMS, DEFAULT_TIMEOUTS, PROMPT_ID_TO_KIND } from "../llm/types";
 import { estimateTokens } from "../core/text";
 
 /**
  * Prompt 版本与组装工具。
  *
- * 版本规则（AGENT-BEHAVIOR §prompt 版本管理）：
+ * 版本规则：
  * - MAJOR：输出 schema / 行为语义变化 → 需要 PM 批准
  * - MINOR：上下文或规则变化
  * - PATCH：措辞微调
@@ -30,36 +30,34 @@ export const SHARED_RULES = [
 
 export interface MakeSpecInput {
   id: PromptId;
-  kind: PromptKind;
   system: string;
   user: string;
+  /** 已废弃：kind 由 id 推导，保留字段仅为兼容旧调用 */
+  kind?: "json" | "text";
   includedMessageIds?: string[];
-  paramsOverride?: Partial<LLMParams>;
+  paramsOverride?: Partial<{ temperature: number; maxOutputTokens: number }>;
   timeoutMs?: number;
 }
 
 export function makeSpec(input: MakeSpecInput): PromptSpec {
   const base = DEFAULT_LLM_PARAMS[input.id];
-  const params: LLMParams = {
-    ...base,
-    ...input.paramsOverride,
-    thinking: "disabled",
-  };
-
-  const messages: ChatMessage[] = [
-    { role: "system", content: input.system.trim() },
-    { role: "user", content: input.user.trim() },
-  ];
+  const params = { ...base, ...input.paramsOverride };
+  const system = input.system.trim();
+  const user = input.user.trim();
 
   return {
+    kind: PROMPT_ID_TO_KIND[input.id],
+    system,
+    user,
+    responseFormat: params.responseFormat,
+    temperature: params.temperature,
+    maxOutputTokens: params.maxOutputTokens,
     id: input.id,
     version: PROMPT_VERSIONS[input.id],
-    kind: input.kind,
-    messages,
-    params,
     timeoutMs: input.timeoutMs ?? DEFAULT_TIMEOUTS[input.id],
-    estimatedInputTokens: messages.reduce((sum, m) => sum + estimateTokens(m.content), 0),
+    estimatedInputTokens: estimateTokens(system) + estimateTokens(user),
     includedMessageIds: input.includedMessageIds ?? [],
+    thinking: "disabled",
   };
 }
 

@@ -33,6 +33,19 @@ export function countSentences(text: string): number {
   return matches ? matches.length : 0;
 }
 
+/** 按句末标点切句，保留标点；没有标点时整段算一句。 */
+export function splitSentences(text: string): string[] {
+  const matches = text.match(/[^。！？!?]+[。！？!?]+/gu);
+  if (!matches) {
+    const trimmed = text.trim();
+    return trimmed ? [trimmed] : [];
+  }
+  const tail = text.slice(matches.join("").length).trim();
+  const result = matches.map((s) => s.trim());
+  if (tail) result.push(tail);
+  return result.filter(Boolean);
+}
+
 /** 把换行、连续空白压成单个空格。 */
 export function normalizeWhitespace(text: string): string {
   return text.replace(/\s+/g, " ").trim();
@@ -42,9 +55,9 @@ export function normalizeWhitespace(text: string): string {
 export function stripFormatting(raw: string): string {
   let text = raw.trim();
   // 整段 code fence
-  text = text.replace(/^```[a-zA-Z]*\s*/u, "").replace(/```$/u, "");
+  text = text.replace(/^```[a-zA-Z]*\s*/u, "").replace(/```$/u, "").trim();
   // 引号包裹
-  text = text.replace(/^["'“”「『]+/u, "").replace(/["'“”」』]+$/u, "");
+  text = text.replace(/^["'“”「『]+/u, "").replace(/["'“”」』]+$/u, "").trim();
   // 「姓名：」或「[姓名]：」前缀
   text = text.replace(/^[\[【]?[\u4e00-\u9fa5]{2,4}[\]】]?\s*[：:]\s*/u, "");
   // 行首 markdown 标记

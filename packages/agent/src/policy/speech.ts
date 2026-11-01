@@ -3,9 +3,12 @@ import {
   char3GramJaccard,
   countSentences,
   normalizeWhitespace,
+  splitSentences,
   stripFormatting,
   truncateChars,
 } from "../core/text";
+
+export { splitSentences };
 
 /**
  * 发言后置校验（AR-04 + 反重复 + 反冒名）。
@@ -21,8 +24,8 @@ export const MAX_SENTENCES = 2;
 export const REPETITION_THRESHOLD = 0.5;
 
 const META_PATTERNS: RegExp[] = [
-  /作为(一个)?(AI|人工智能|助手|语言模型)/u,
-  /我是(一个)?(AI|人工智能|模型|助手)/u,
+  /作为\s*(?:一个)?\s*(?:AI|人工智能|助手|语言模型)/iu,
+  /我是\s*(?:一个)?\s*(?:AI|人工智能|模型|助手)/iu,
   /^以下是/u,
   /^好的[，,]/u,
 ];
@@ -112,19 +115,6 @@ export function validateSpeech(raw: string, options: SpeechCheckOptions = {}): S
     repeated,
     reasons,
   };
-}
-
-/** 按句末标点切句，保留标点。 */
-export function splitSentences(text: string): string[] {
-  const matches = text.match(/[^。！？!?]+[。！？!?]+/gu);
-  if (!matches) {
-    const trimmed = text.trim();
-    return trimmed ? [trimmed] : [];
-  }
-  const tail = text.slice(matches.join("").length).trim();
-  const result = matches.map((s) => s.trim());
-  if (tail) result.push(tail);
-  return result.filter(Boolean);
 }
 
 /** 超长时优先在句末截断，其次硬截并补省略号（不新增语义）。 */

@@ -102,7 +102,7 @@ export const COLOR_PALETTE: Record<ColorKey, { hex: string; label: string }> = {
 /** 主持人固定中性色，不占用专家调色板。 */
 export const HOST_COLOR = "#D9D9D9";
 
-/** 模型输出的阵容草稿（尚未分配 id/hex）。 */
+/** 模型输出的阵容草稿（尚未分配 id；颜色二选一）。 */
 export interface PersonaDraft {
   name: string;
   profession: string;
@@ -111,7 +111,10 @@ export interface PersonaDraft {
   stanceAxis: string;
   polarity: Polarity;
   focusArea: string;
-  colorKey: ColorKey;
+  /** 调色板 key（推荐）；与 color 二选一 */
+  colorKey?: ColorKey;
+  /** 兼容既有 fixtures 的十六进制色；与 colorKey 二选一 */
+  color?: string;
 }
 
 export interface RosterDraft {
@@ -169,6 +172,11 @@ export interface PublicTurn {
   references?: string[];
 }
 
-export type CloseReason = "hard_cap" | "planned_reached" | "early_stop";
+/**
+ * 收尾原因。
+ * 没有 early_stop：主持固定 4 席，8 轮就收会让主持占到 50%，数学上无法同时满足
+ * 「主持 ≤1/3」与「每人至少发言 1 次」，所以收束点固定在 plannedTurns。
+ */
+export type CloseReason = "hard_cap" | "planned_reached";
 
 export type TurnPhase = "open" | "expand" | "clash" | "deepen" | "preclose" | "close";

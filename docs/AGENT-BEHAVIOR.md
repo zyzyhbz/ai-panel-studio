@@ -29,7 +29,7 @@
 | --- | --- | --- |
 | `TARGET_TURNS(n)` | `clamp(4 + 2n, 8, 12)`（n=3→10，n≥4→12） | PRD §10.4 的 8–12 轮 |
 | `HARD_CAP` | `min(TARGET_TURNS + 2, 14)` | PRD §10.4 硬上限 14 |
-| `EARLY_STOP_MIN` | 8 | 8–12 的下界 |
+| `EARLY_STOP_MIN` | ~~8~~（已废） | 见 §3.4：早停会让主持占比到 50%，已删除 |
 | `HOST_MAX_TURNS` | 4（开场 1 + 中段 2 + 收尾 1） | AR-02 |
 | `CONSECUTIVE_MAX` | 2（策略目标 1） | AR-03 / PRD §10.4 |
 | `SPEECH_MAX_CHARS` | 120（目标 ≤ 80） | AR-04 |
@@ -201,15 +201,18 @@ flowchart LR
 
 ### 3.4 收尾触发（`shouldClose`）
 
-三档，任一满足即触发；触发后**下一轮必须是主持收尾**，不再走决策：
+两档，任一满足即触发；触发后**下一轮必须是主持收尾**，不再走决策：
 
 | 档 | 条件 |
 | --- | --- |
-| 必须收（hard） | `turnIndex >= hardCap` |
-| 应改收（target） | `turnIndex >= totalTarget - 1` 且 每位专家已发言 ≥1 且 已有 ≥1 共识 且 ≥1 分歧 |
-| 可早收（early） | `turnIndex >= 8` 且 上述覆盖条件成立 且 无未回应的 `open_question` |
+| 必须收（hard） | `turnIndex > maxTurns`（`plannedTurns + 2`，上限 14） |
+| 应改收（target） | `turnIndex >= plannedTurns`（n=4 时 = 12） |
 
-不能收的情况：还有专家 0 发言（除非轮次已到 hardCap）。
+**已删除 early_stop（v1.1 修正）**：原设计允许在第 8 轮早停，但主持固定 4 席（开场/追问/串联/收尾），
+4/8 = 50% 主持占比 + 每位专家仅 1 次发言，**数学上不可能同时满足「主持 ≤1/3」与「每人 ≥1 次且不独角戏」**。
+实现（`evaluateClose`）与 eval 都已按"收束点固定为 plannedTurns"对齐；`CloseReason` 也去掉了 `early_stop`。
+
+不能收的情况：还有专家 0 发言（只在 `hard_cap` 前成立，触发 coverage 强制）。
 
 ---
 
@@ -315,14 +318,15 @@ score(e) =
 | 轮次 | 阶段 | 动作 |
 | --- | --- | --- |
 | 1 | 开场 | host `opening` |
-| 2–4 | 铺开 | 优先未发言专家；host 在 3 或 4 轮做 `probe` |
-| 5–8 | 碰撞 | 优先 `rebut/clarify` 指向具体发言；host 在 6–8 轮做 `mediate` |
+| 2–4 | 铺开 | 优先未发言专家；host 在 3–5 轮做一次 `probe` |
+| 5–8 | 碰撞 | 优先 `rebut/clarify` 指向具体发言；host 在 6–8 轮做一次 `mediate` |
 | 9–10 | 深化 | 只允许 `extend/support`，禁止开新战场（`redirect` 关闭） |
-| 11 | 预收 | 若覆盖达成 → host `summary`；否则补最后一位未发言专家 |
-| 12 | 收束 | 强制 host `summary`（target 到期） |
+| 11 | 预收 | 不再由主持提前收；继续补齐覆盖（host 已用满 4 席） |
+| 12 | 收束 | 强制 host `summary`（`planned_reached`） |
 | 13–14 | 兜底 | 只在硬约束未满足时出现（如有人 0 发言、收尾失败重试） |
 
 "深化"阶段禁止 `redirect` 是关键：否则第 10 轮还在开新话题，永远收不住。
+主持 4 席的分配：opening(1) + probe + mediate + summary(12) = 4，占比 4/12 = 33%。
 
 ---
 

@@ -24,7 +24,12 @@ export const INSIGHT_CAPS: Record<InsightType, number> = {
   open_question: 6,
 };
 
-export const MAX_NEW_INSIGHTS = 2;
+/** 每类每轮最多新增几条：防止一次刷新刷屏，但允许三类各出一条。 */
+export const MAX_NEW_INSIGHTS: Record<InsightType, number> = {
+  consensus: 2,
+  divergence: 2,
+  open_question: 2,
+};
 export const DUPLICATE_SIMILARITY = 0.6;
 export const INSIGHT_MAX_CHARS = 50;
 
@@ -32,6 +37,24 @@ export interface RejectedInsight {
   index: number;
   type?: string;
   reason: string;
+}
+
+/**
+ * 把拒绝原因压成一行给日志用，例如 `evidence_unknown×3, need_two_speakers×1`。
+ *
+ * 运行时"洞察恒为 0 条"时先看这个：
+ * - `evidence_unknown`：模型给了不存在的 messageId（最常见，多半是 prompt 没带 id 或 mock 自己编 id）
+ * - `need_two_speakers`：共识/分歧只有一位发言者的证据
+ * - `over_max_new`：一次刷新想塞超过 2 条同类
+ */
+export function summarizeInsightRejections(rejected: RejectedInsight[]): string {
+  if (rejected.length === 0) return "ok";
+  const counts = new Map<string, number>();
+  for (const item of rejected) {
+    const key = item.reason.split(":")[0] ?? item.reason;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return [...counts.entries()].map(([key, count]) => `${key}×${count}`).join(", ");
 }
 
 export interface InsightNormalizeResult {
@@ -44,7 +67,8 @@ export interface InsightNormalizeResult {
 export interface InsightNormalizeOptions {
   /** 当前轮次，用于给新条目写 firstSeenTurn */
   turnIndex?: number;
-  maxNew?: number;
+  /** 每类允许新增的条数；数字表示三类共用一个上限，对象表示逐类覆盖 */
+  maxNew?: number | Partial<Record<InsightType, number>>;
   /** 允许作为证据的消息 id 集合；默认用 snapshot.messages */
   knownMessageIds?: Set<string>;
 }
@@ -58,7 +82,14 @@ export function normalizeInsights(
   const messageById = new Map(snapshot.messages.map((m) => [m.id, m]));
   const existingById = new Map(snapshot.insights.map((i) => [i.id, i]));
   const turnIndex = options.turnIndex ?? Math.min(snapshot.turnCount + 1, snapshot.maxTurns);
-  const maxNew = options.maxNew ?? MAX_NEW_INSIGHTS;
+  const newCaps: Record<InsightType, number> =
+    typeof options.maxNew === "number"
+      ? {
+          consensus: options.maxNew,
+          divergence: options.maxNew,
+          open_question: options.maxNew,
+        }
+      : { ...MAX_NEW_INSIGHTS, ...(options.maxNew ?? {}) };
 
   const rejected: RejectedInsight[] = [];
   const accepted: InsightItem[] = [];
@@ -140,21 +171,26 @@ export function normalizeInsights(
     if (!existingById.has(id)) added += 1;
   }
 
-  if (added > maxNew) {
-    const kept: InsightItem[] = [];
-    let newKept = 0;
-    for (const item of accepted) {
-      if (existingById.has(item.id)) {
-        kept.push(item);
-        continue;
-      }
-      if (newKept >= maxNew) {
-        rejected.push({ index: -1, type: item.type, reason: "over_max_new" });
-        continue;
-      }
-      newKept += 1;
+  // 新增上限按"类型"分别计：三类各出一条是正常刷新，不该被整体上限砍掉
+  const kept: InsightItem[] = [];
+  const newCount: Record<InsightType, number> = {
+    consensus: 0,
+    divergence: 0,
+    open_question: 0,
+  };
+  for (const item of accepted) {
+    if (existingById.has(item.id)) {
       kept.push(item);
+      continue;
     }
+    if (newCount[item.type] >= newCaps[item.type]) {
+      rejected.push({ index: -1, type: item.type, reason: "over_max_new" });
+      continue;
+    }
+    newCount[item.type] += 1;
+    kept.push(item);
+  }
+  if (kept.length !== accepted.length) {
     accepted.length = 0;
     accepted.push(...kept);
     repaired = true;

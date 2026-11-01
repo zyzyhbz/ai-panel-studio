@@ -72,7 +72,7 @@ export function buildEligibility(snapshot: DiscussionSnapshot): Eligibility {
   const neverSpoken = experts.filter((e) => !counts.get(e.id)).map((e) => e.id);
 
   const hostQuota = hostQuotaOf(snapshot, host);
-  const closeReason = evaluateClose(snapshot, turnIndex, neverSpoken, hostQuota);
+  const closeReason = evaluateClose(snapshot, turnIndex);
   const mustClose = closeReason !== undefined;
   const phase = mustClose ? "close" : phaseFor(turnIndex, snapshot.plannedTurns);
 
@@ -121,7 +121,10 @@ export function buildEligibility(snapshot: DiscussionSnapshot): Eligibility {
     exempted.push({ id: "*", reason: "候选集为空，放宽连续限制" });
   }
 
-  const hostAllowed = host ? shouldAllowHost(turnIndex, snapshot.plannedTurns, hostQuota, neverSpoken) : false;
+  // 收尾轮必须包含主持人：否则 forcedSpeaker 找不到人，会退回"全是专家"的候选集
+  const hostAllowed = host
+    ? mustClose || shouldAllowHost(turnIndex, snapshot.plannedTurns, hostQuota, neverSpoken)
+    : false;
   if (host && hostAllowed) {
     candidates.push({
       id: host.id,
@@ -261,25 +264,21 @@ function lastIntentOf(snapshot: DiscussionSnapshot, expertId: string): Intent | 
 
 /**
  * 收尾判定：
- * - hard_cap：超过硬上限，必须收；
- * - planned_reached：到达计划轮次；
- * - early_stop：≥8 轮、全员发过言、主持义务完成、且已有共识与分歧。
+ * - hard_cap：超过硬上限（plannedTurns + 2），必须收；
+ * - planned_reached：到达计划轮次（8–12，按专家数推出）。
+ *
+ * 为什么没有 early_stop：主持固定 4 席（开场/追问/串联/收尾），
+ * 若在第 8 轮就收，主持占比会到 4/8 = 50%，且每位专家只有 1 次发言——
+ * 数学上就不可能同时满足「主持 ≤1/3」和「每人 ≥1 次且不独角戏」。
+ * 所以收束点固定为 plannedTurns（n=4 时正好 12，主持 33%）。
  */
 export function evaluateClose(
   snapshot: DiscussionSnapshot,
   turnIndex: number,
-  neverSpoken: string[],
-  quota: HostQuota,
 ): CloseReason | undefined {
   if (turnIndex > snapshot.maxTurns) return "hard_cap";
   if (turnIndex >= snapshot.plannedTurns) return "planned_reached";
-  if (turnIndex < 8) return undefined;
-  if (neverSpoken.length > 0) return undefined;
-  if (!quota.probeUsed || !quota.mediateUsed) return undefined;
-  const hasConsensus = snapshot.insights.some((i) => i.type === "consensus");
-  const hasDivergence = snapshot.insights.some((i) => i.type === "divergence");
-  if (!hasConsensus || !hasDivergence) return undefined;
-  return "early_stop";
+  return undefined;
 }
 
 /** 收尾时主持人该用哪个 intent。 */

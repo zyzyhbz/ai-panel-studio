@@ -1,0 +1,14 @@
+{
+  "jsonLegalRate": 0.95,
+  "sentenceCompliance": 0.95,
+  "lengthCompliance": 0.98,
+  "coverageRate": 1.0,
+  "maxExpertShare": 0.35,
+  "hostShareMax": 0.34,
+  "rotationViolations": 0,
+  "repetitionRate": 0.05,
+  "polarityKinds": 3,
+  "evidenceRate": 1.0,
+  "summaryParagraphs": 3,
+  "costRmbMax": 0.3
+}
