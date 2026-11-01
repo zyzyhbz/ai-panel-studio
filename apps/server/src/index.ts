@@ -1,63 +1,57 @@
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
-import { config as loadEnv } from "dotenv";
-import Fastify from "fastify";
-import cors from "@fastify/cors";
-import { APP_NAME } from "@ai-panel/shared";
+import { buildApp } from "./app";
+import { ConfigError, loadConfig, loadEnvFiles } from "./config/env";
 
-const rootEnv = resolve(import.meta.dirname, "../../../.env.local");
-const rootEnvFallback = resolve(import.meta.dirname, "../../../.env");
-if (existsSync(rootEnv)) loadEnv({ path: rootEnv });
-else if (existsSync(rootEnvFallback)) loadEnv({ path: rootEnvFallback });
+async function main(): Promise<void> {
+  loadEnvFiles();
 
-const port = Number(process.env.PORT ?? 3001);
-const host = process.env.HOST ?? "127.0.0.1";
-const startedAt = Date.now();
+  let config;
+  try {
+    config = loadConfig();
+  } catch (error) {
+    if (error instanceof ConfigError) {
+      // Deliberately no stack trace and no env dump: it may contain the Key.
+      console.error(`[config] ${error.code}: ${error.message}`);
+      process.exit(1);
+    }
+    throw error;
+  }
 
-const app = Fastify({
-  logger: {
-    level: process.env.LOG_LEVEL ?? "info",
-    redact: {
-      paths: [
-        "req.headers.authorization",
-        "req.headers.cookie",
-        "*.apiKey",
-        "*.api_key",
-        "*.reasoning_content",
-      ],
-      censor: "[REDACTED]",
+  const built = await buildApp({ config });
+  for (const warning of config.warnings) {
+    built.app.log.warn(warning);
+  }
+  built.app.log.info(
+    {
+      llmMode: config.llm.mode,
+      model: config.llm.model,
+      thinking: config.llm.thinking,
+      database: config.databasePath,
     },
-  },
-});
+    "starting server",
+  );
 
-await app.register(cors, {
-  origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
-});
+  let closing = false;
+  const shutdown = async (signal: string): Promise<void> => {
+    if (closing) return;
+    closing = true;
+    built.app.log.info({ signal }, "shutting down");
+    try {
+      await built.close();
+    } catch (error) {
+      built.app.log.error({ err: (error as Error).message }, "shutdown failed");
+    }
+    process.exit(0);
+  };
 
-app.get("/api/health", async () => ({
-  status: "ok",
-  app: APP_NAME,
-  version: "0.1.0",
-  llmMode: process.env.LLM_MODE ?? "mock",
-  dbReady: false,
-  activeSseCount: 0,
-  uptimeMs: Date.now() - startedAt,
-  rssBytes: process.memoryUsage().rss,
-  now: new Date().toISOString(),
-}));
+  process.on("SIGINT", () => void shutdown("SIGINT"));
+  process.on("SIGTERM", () => void shutdown("SIGTERM"));
 
-async function shutdown(signal: string) {
-  app.log.info({ signal }, "shutting down");
-  await app.close();
-  process.exit(0);
+  try {
+    await built.app.listen({ port: config.port, host: config.host });
+  } catch (error) {
+    built.app.log.error({ err: (error as Error).message }, "failed to listen");
+    process.exit(1);
+  }
 }
 
-process.on("SIGINT", () => void shutdown("SIGINT"));
-process.on("SIGTERM", () => void shutdown("SIGTERM"));
-
-try {
-  await app.listen({ port, host });
-} catch (error) {
-  app.log.error(error);
-  process.exit(1);
-}
+await main();

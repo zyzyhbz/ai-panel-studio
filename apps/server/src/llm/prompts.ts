@@ -1,8 +1,8 @@
 /**
- * Prompt facade.
+ * Prompt facade — everything comes from `@ai-panel/agent` (AI/Agent owner).
  *
- * Today this re-exports the local shim. When AI-02 publishes
- * `packages/agent` prompt builders, only this file changes.
+ * The server never contains prompt text (SOP §11). Call sites import builders
+ * from this module only, so a future prompt-version bump is a one-file change.
  */
 export {
   buildRosterPrompt,
@@ -10,7 +10,8 @@ export {
   buildSpeechPrompt,
   buildInsightPrompt,
   buildSummaryPrompt,
-  type PromptSpecLike,
-} from "./prompts.shim";
+  PROMPT_VERSIONS,
+} from "@ai-panel/agent";
 
-export const PROMPT_VERSION = "shim-0.1.0";
+/** Version stamped into logs (never into event payloads, per AGENT-API §2). */
+export const PROMPT_VERSION = "1.0.0";

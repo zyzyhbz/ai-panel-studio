@@ -188,12 +188,17 @@ export function createDiscussionsRepo(db: Db) {
     /**
      * Boot recovery: non-stable states become `failed(INTERRUPTED)`.
      * Never re-runs the LLM (contract decision, docs/06 §1.3).
+     *
+     * `excludeIdPrefix` protects authored demo fixtures: a seeded `live` sample is
+     * an intentional snapshot, not a crashed session.
      */
-    markInterrupted(now: string, message: string): string[] {
+    markInterrupted(now: string, message: string, excludeIdPrefix?: string): string[] {
       return db.transaction(() => {
+        const filter = excludeIdPrefix ? " AND id NOT LIKE ?" : "";
+        const args = excludeIdPrefix ? [`${excludeIdPrefix}%`] : [];
         const rows = db
-          .prepare("SELECT id FROM discussions WHERE status IN ('live','summarizing')")
-          .all() as { id: string }[];
+          .prepare(`SELECT id FROM discussions WHERE status IN ('live','summarizing')${filter}`)
+          .all(...args) as { id: string }[];
         if (rows.length === 0) return [] as string[];
         const ids = rows.map((r) => r.id);
         const placeholders = ids.map(() => "?").join(",");
@@ -207,18 +212,22 @@ export function createDiscussionsRepo(db: Db) {
     },
 
     /** `generating` cannot resume either: no usable roster was persisted. */
-    markStaleGenerating(now: string, message: string): string[] {
+    markStaleGenerating(now: string, message: string, excludeIdPrefix?: string): string[] {
       return db.transaction(() => {
+        const filter = excludeIdPrefix ? " AND id NOT LIKE ?" : "";
+        const args = excludeIdPrefix ? [`${excludeIdPrefix}%`] : [];
         const rows = db
-          .prepare("SELECT id FROM discussions WHERE status = 'generating'")
-          .all() as { id: string }[];
+          .prepare(`SELECT id FROM discussions WHERE status = 'generating'${filter}`)
+          .all(...args) as { id: string }[];
         if (rows.length === 0) return [] as string[];
+        const ids = rows.map((r) => r.id);
+        const placeholders = ids.map(() => "?").join(",");
         db.prepare(
           `UPDATE discussions SET status = 'failed', error_code = 'INTERRUPTED',
              error_message = ?, updated_at = ?
-           WHERE status = 'generating'`,
-        ).run(message, now);
-        return rows.map((r) => r.id);
+           WHERE id IN (${placeholders})`,
+        ).run(message, now, ...ids);
+        return ids;
       })();
     },
 

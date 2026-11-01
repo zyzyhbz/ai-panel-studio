@@ -1,12 +1,29 @@
 import type { InsightType } from "@ai-panel/shared";
 import type { Db } from "../db/connection";
 import type { InsightRecord } from "../types";
-import { collapseWhitespace, contentHash, normalizePlainText } from "../lib/text";
+import { collapseWhitespace, contentHash, normalizePlainText, sha256Hex } from "../lib/text";
 
 export interface InsightDraftInput {
   type: InsightType;
   content: string;
   evidenceMessageIds: readonly string[];
+  /** Turn the insight first appeared (agent-normalized). */
+  firstSeenTurn?: number;
+}
+
+/**
+ * Insight ids must be GLOBALLY unique (`insights.id` is a PRIMARY KEY) but stable
+ * across snapshots. The agent numbers its output per session (`i_1`, `i_2`, …), so
+ * using its ids directly collides across discussions and across re-numbered
+ * snapshots — that is exactly the `UNIQUE constraint failed: insights.id` bug that
+ * silently emptied the consensus panel. Derive the id from the identity instead.
+ */
+export function insightIdFor(
+  discussionId: string,
+  type: InsightType,
+  hash: string,
+): string {
+  return `i_${sha256Hex(`${discussionId}\u0000${type}\u0000${hash}`).slice(0, 24)}`;
 }
 
 interface InsightRow {
@@ -110,8 +127,6 @@ export function createInsightsRepo(db: Db) {
           "INSERT OR IGNORE INTO insight_evidence (insight_id, message_id) VALUES (?, ?)",
         );
         const currentEvidence = evidenceMap(discussionId);
-        const idFactory = (): string =>
-          `i_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
 
         for (const draft of drafts) {
           const type = draft.type;
@@ -149,14 +164,14 @@ export function createInsightsRepo(db: Db) {
             continue;
           }
 
-          const id = idFactory();
+          const id = insightIdFor(discussionId, type, hash);
           insertStmt.run({
             id,
             discussion_id: discussionId,
             type,
             content,
             content_hash: hash,
-            first_seen_turn: turnIndex,
+            first_seen_turn: draft.firstSeenTurn ?? turnIndex,
             created_at: now,
             updated_at: now,
           });
