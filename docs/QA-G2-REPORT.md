@@ -10,7 +10,7 @@
 
 ## 0. 一句话结论
 
-E2E 骨架已可执行：**16 条用例（5 个 spec），最近一次全量运行 16 passed / 0 failed / 0 skipped**；fixtures **37 个 JSON，校验 PASS**；主链路能从首页跑到"SSE 收到首条 `message.completed`"并校验事件序。已修掉"trace 写到中文路径导致 ENOENT"这一基建问题（产物改到 `%TEMP%\ai-panel-e2e`）。当前唯一需要盯的是联调期后端进程重启造成的偶发 `ECONNREFUSED`。
+E2E 骨架已可执行：**20 条用例（6 个 spec），最近一次全量运行 20 passed / 0 failed / 0 skipped（11.9s）**；fixtures **37 个 JSON，校验 PASS**；主链路能从首页跑到"SSE 收到首条 `message.completed`"并校验事件序；演播厅三栏布局已加回归用例（1440 不重叠 + 1024/390 无整页滚动）。已修掉"trace 写到中文路径导致 ENOENT"这一基建问题（产物改到 `%TEMP%\ai-panel-e2e`）。
 
 ---
 
@@ -68,11 +68,31 @@ fixtures 校验：37 个文件
 | 11 | BUG-01 对照组：直接打开已结束讨论能渲染 transcript | ✅ passed | 隔离"是渲染问题还是数据问题" |
 | 12 | API 创建幂等：同 `clientRequestId` 只产生 1 条讨论 | ✅ passed | 06 §1.1，两次 200/201 同 id |
 | 13 | 创建参数校验：短/超长/空白议题、人数 2/7 → 400 `VALIDATION_ERROR` | ✅ passed | FR-02 |
+| 14 | **1440×900 三栏不重叠且铺满视口** | ✅ passed | 见 §3.1 实测几何 |
+| 15 | **1440×900 首条消息可见且落在 stage 栏内** | ✅ passed | 空壳回归 |
+| 16 | **1024×768 无整页滚动、主面板可滚** | ✅ passed | NFR-05 |
+| 17 | **390×844 无整页滚动、主面板可滚** | ✅ passed | NFR-05 |
 
-**结论**：最近一次全量运行 **16 passed / 0 failed / 0 skipped（9.3s）**。此前 3 条因后端进程重启中途退出而失败，均为 `ECONNREFUSED`（基建问题，非断言问题）；改指向稳定实例后全绿。
+**结论**：最近一次全量运行 **20 passed / 0 failed / 0 skipped（11.9s）**。此前失败均因后端进程重启中途退出（`ECONNREFUSED`，基建问题非断言问题），改指向稳定实例后全绿。
 `E2E_STRICT=1` 下"应用不可达"会直接失败而不是 skip，供发版门禁使用。
 
 **运行基线**：`E2E_ARTIFACTS_DIR=%TEMP%\ai-panel-e2e`；`--list` 与报告中文正常（文件为 UTF-8，控制台需 `chcp 65001`）。
+
+### 3.1 布局回归实测几何（1440×900，`.studio-*` 三栏）
+
+修前：三栏子项都只有 `grid-area: stage` → 三栏重叠成一列，只剩 InsightPanel 可见。
+修后实测（来自 `e2e/tools/inspect-page.mjs`）：
+
+| 栏 | x | y | width | height |
+| --- | --- | --- | --- | --- |
+| rail | 0 | 64 | 302 | 780 |
+| stage | 302 | 64 | 792 | 780 |
+| insights | 1094 | 64 | 346 | 780 |
+| viewport | — | — | 1440 | 900 |
+
+- 三栏 x 区间首尾相接：`[0,302) [302,1094) [1094,1440)`，**无重叠**，合计正好铺满 1440。
+- `scrollHeight == clientHeight == 900` → 无整页纵向滚动。
+- 用例断言方式：两两做矩形相交判断（容差 1px）+ `rail.x ≤ 2` + `insights.right ≥ 1438`，因此"三栏回到重叠"这类回归会被直接抓住，不会因为选择器命中同一个元素而假绿。
 
 ## 4. 缺陷与观察
 
@@ -87,6 +107,13 @@ fixtures 校验：37 个文件
 
 - 首页空态按钮「发起第一场讨论」没有 `data-testid`，只能靠 `button:has-text("发起")` 兜底定位。
 - 影响：文案一改选择器就断。建议补 `data-testid="new-discussion"`（列表态已有同名 testid，空态应一致）。
+
+### BUG-03（P1，**已由前端修复**）：三栏 grid-area 全部写成 `stage`，1440 下三栏重叠
+
+- 现象：1440×900 下 rail / stage / insights 三栏重叠成一列，页面上只剩 InsightPanel 可见。
+- 根因：`styles.css` 里三栏子项都只有 `grid-area: stage`。
+- 修复：补 `.studio-rail{grid-area:rail}`、`.studio-stage{grid-area:stage}`、90rem 下 `.studio-insights{grid-area:insights}`。
+- 回归：`e2e/specs/layout.stage.spec.ts` 4 条用例（1440 不重叠铺满 / 首条消息可见且在 stage 内 / 1024 无整页滚动 / 390 无整页滚动），实测几何见 §3.1。
 
 ### 观察 1：测试环境路径编码（已修）
 
