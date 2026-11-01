@@ -17,7 +17,8 @@
     "db:migrate": "pnpm --filter @ai-panel/server db:migrate",
     "db:seed": "pnpm --filter @ai-panel/server db:seed",
     "db:reset": "pnpm --filter @ai-panel/server db:reset",
-    "check:key": "node scripts/check-no-key.mjs"
+    "check:key": "node scripts/check-no-key.mjs",
+    "check:prompts": "tsx evals/check-prompt-versions.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",

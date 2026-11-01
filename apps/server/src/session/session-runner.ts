@@ -100,7 +100,8 @@ export class SessionRunner {
       if (this.stopRequested) return;
       const snapshot = projectSnapshot(this.deps.repos, this.discussionId);
       if (!snapshot || snapshot.status !== "live") return;
-      // Hard cap is a safety net; eligibility drives normal closing.
+      // Hard cap (36): a safety net above the soft target. Eligibility drives the
+      // normal close; this only guarantees we can never run past the ceiling.
       if (snapshot.turnCount >= snapshot.maxTurns) return;
 
       const eligibility = buildEligibility(snapshot);
@@ -117,7 +118,11 @@ export class SessionRunner {
       if (this.turnsRun % 2 === 0) {
         this.deps.insights.notify(this.discussionId, this.scenario());
       }
-      if (eligibility.mustClose) return; // closing turn done -> manager finalizes
+      // Terminal turn: the host said its closing piece, or the policy forced the
+      // close. Closing is driven by argument saturation after the coverage floor
+      // and before the 36 ceiling — never by a turn target. The loop only trusts
+      // `action: "close"` here, so an expert can never end the session.
+      if (eligibility.mustClose || isTerminalTurn(decision)) return;
     }
   }
 
@@ -137,7 +142,7 @@ export class SessionRunner {
         : eligibility.forcedReason === "opening"
           ? "opening"
           : "extend";
-      return {
+      const forced: TurnDecision = {
         speakerId: speaker.id,
         intent,
         turnFocus:
@@ -147,6 +152,8 @@ export class SessionRunner {
               ? "收尾与共识"
               : speaker.focusArea.slice(0, 20),
       };
+      if (intent === "summary") forced.action = "close";
+      return forced;
     }
 
     try {
@@ -183,7 +190,11 @@ export class SessionRunner {
           "decision repaired",
         );
       }
-      return sanitized.decision;
+      // Policy owns the close decision: `sanitizeDecision` only emits `action: "close"`
+      // when eligibility says the debate is saturated (or at the 36 ceiling). A model
+      // that asks to close earlier is recorded as CLOSE_NOT_ALLOWED and ignored here —
+      // otherwise a single turn could end a debate that is still productive.
+      return this.normalizeClosingDecision(sanitized.decision, snapshot);
     } catch (error) {
       // AGENT-API §5.2: never retry the decision; use the deterministic fallback.
       const kind = error instanceof LlmError ? error.kind : "unknown";
@@ -192,8 +203,38 @@ export class SessionRunner {
         "decision failed; using fallback speaker",
       );
       const fallback = selectFallbackSpeaker(snapshot, eligibility);
-      return fallback.decision ?? null;
+      return fallback.decision
+        ? this.normalizeClosingDecision(fallback.decision, snapshot)
+        : null;
     }
+  }
+
+  /**
+   * The host is the only one who may close, and closing means a `summary` turn.
+   *
+   * Two shapes can arrive here:
+   * - policy `mustClose` (saturation or the 36 ceiling) already forced host+summary;
+   * - the model proposes `action: "close"` (or a `summary` intent) earlier — then we
+   *   re-point it at the host, so an expert can never "close" the panel.
+   *
+   * Result always carries `action: "close"`, which is the only thing the loop trusts.
+   */
+  private normalizeClosingDecision(
+    decision: TurnDecision,
+    snapshot: DiscussionSnapshot,
+  ): TurnDecision {
+    if (!isClosingSignal(decision)) return decision;
+    const host = snapshot.experts.find((e) => e.role === "host");
+    if (!host) return { ...decision, action: "next" };
+    if (decision.speakerId === host.id && decision.intent === "summary") {
+      return { ...decision, action: "close" };
+    }
+    return {
+      speakerId: host.id,
+      intent: closingIntent(),
+      turnFocus: "收尾与共识",
+      action: "close",
+    };
   }
 
   /* --------------------------------------------------------------- doing */
@@ -308,11 +349,22 @@ export class SessionRunner {
     const prompt = buildSpeechPrompt({ snapshot, decision, speaker });
     const signal = combineSignals([this.abort.signal, AbortSignal.timeout(timeoutMs)]);
 
+    // "Thinking" starts when the model call starts: the seat shows 思考中 until the
+    // first token, then flips to 发言中 on the first message.delta.
+    // Transient frame (no seq, not persisted), and it never carries reasoning_content.
+    this.deps.broadcaster.emitEphemeral(this.discussionId, "message.thinking", {
+      discussionId: this.discussionId,
+      messageId,
+      speakerId: speaker.id,
+      turnIndex: snapshot.turnCount + 1,
+      intent: decision.intent,
+    });
+
     let buffer = "";
     const stream = this.deps.llm.stream({
       prompt,
       signal,
-      firstTokenTimeoutMs: Math.min(6_000, timeoutMs),
+      firstTokenTimeoutMs: Math.min(this.deps.config.llm.firstTokenTimeoutMs, timeoutMs),
       totalTimeoutMs: prompt.timeoutMs ?? timeoutMs,
       meta: {
         discussionId: this.discussionId,
@@ -321,7 +373,7 @@ export class SessionRunner {
         expertCount: snapshot.expertCount,
         roster: snapshot.experts.map((e) => ({ id: e.id, role: e.role, name: e.name })),
         topic: snapshot.topic,
-          messageIds: snapshot.messages.map((m) => m.id),
+        messageIds: snapshot.messages.map((m) => m.id),
         speakerId: speaker.id,
         intent: decision.intent,
         turnFocus: decision.turnFocus,
@@ -357,6 +409,23 @@ export class SessionRunner {
       );
     }
   }
+}
+
+/** A close *signal* from the policy or the model: `action: "close"` or a `summary` turn. */
+export function isClosingSignal(decision: TurnDecision): boolean {
+  return decision.action === "close" || decision.intent === "summary";
+}
+
+/**
+ * A terminal turn: only the normalized closing decision carries `action: "close"`.
+ *
+ * The loop trusts this flag alone, never `intent === "summary"` on its own — an
+ * expert whose intent was sanitized into `summary` must not end the session. Every
+ * closing signal is normalized to host + summary + action=close in
+ * `normalizeClosingDecision` before it can reach the loop.
+ */
+export function isTerminalTurn(decision: TurnDecision): boolean {
+  return decision.action === "close";
 }
 
 function intentForPolarity(expert: ExpertPersona): TurnDecision["intent"] {

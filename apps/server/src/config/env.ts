@@ -1,4 +1,4 @@
-﻿import { existsSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { dirname, isAbsolute, resolve } from "node:path";
 import { config as loadDotenv } from "dotenv";
 import { z } from "zod";
@@ -45,12 +45,18 @@ const envSchema = z.object({
   DEEPSEEK_API_KEY: z.string().optional(),
   DEEPSEEK_BASE_URL: z.string().default("https://api.deepseek.com"),
   DEEPSEEK_MODEL: z.string().default("deepseek-flash"),
-  DEEPSEEK_THINKING: z.enum(["enabled", "disabled"]).default("disabled"),
-  LLM_TIMEOUT_ROSTER_MS: z.coerce.number().int().min(1_000).default(20_000),
-  LLM_TIMEOUT_DECISION_MS: z.coerce.number().int().min(500).default(8_000),
-  LLM_TIMEOUT_SPEECH_MS: z.coerce.number().int().min(1_000).default(20_000),
-  LLM_TIMEOUT_INSIGHT_MS: z.coerce.number().int().min(1_000).default(12_000),
-  LLM_TIMEOUT_SUMMARY_MS: z.coerce.number().int().min(1_000).default(25_000),
+  // docs/09 §7: real mode runs with thinking ON. `enabled` means we do not send the
+  // provider toggle at all (thinking is the provider default); `disabled` sends the
+  // explicit off field.
+  DEEPSEEK_THINKING: z.enum(["enabled", "disabled"]).default("enabled"),
+  // Deep thinking budgets (docs/09 §7): decision 45s, speech 90s, insight 45s,
+  // summary 90s, roster 60s; first token within 20s or the turn degrades.
+  LLM_TIMEOUT_ROSTER_MS: z.coerce.number().int().min(1_000).default(60_000),
+  LLM_TIMEOUT_DECISION_MS: z.coerce.number().int().min(500).default(45_000),
+  LLM_TIMEOUT_SPEECH_MS: z.coerce.number().int().min(1_000).default(90_000),
+  LLM_TIMEOUT_INSIGHT_MS: z.coerce.number().int().min(1_000).default(45_000),
+  LLM_TIMEOUT_SUMMARY_MS: z.coerce.number().int().min(1_000).default(90_000),
+  LLM_FIRST_TOKEN_MS: z.coerce.number().int().min(1_000).default(20_000),
   LLM_MAX_CONCURRENCY: z.coerce.number().int().min(1).max(16).default(4),
 
   MOCK_DELAY_MS: z.coerce.number().int().min(0).max(2_000).default(0),
@@ -85,6 +91,8 @@ export interface AppConfig {
     model: string;
     thinking: "enabled" | "disabled";
     maxConcurrency: number;
+    /** First streamed token budget (docs/09 §7: 20s). */
+    firstTokenTimeoutMs: number;
     timeouts: {
       roster: number;
       decision: number;
@@ -177,6 +185,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       model: raw.DEEPSEEK_MODEL,
       thinking: raw.DEEPSEEK_THINKING,
       maxConcurrency: raw.LLM_MAX_CONCURRENCY,
+      firstTokenTimeoutMs: raw.LLM_FIRST_TOKEN_MS,
       timeouts: {
         roster: raw.LLM_TIMEOUT_ROSTER_MS,
         decision: raw.LLM_TIMEOUT_DECISION_MS,

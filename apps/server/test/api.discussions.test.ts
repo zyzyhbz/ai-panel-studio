@@ -78,7 +78,8 @@ describe("create → detail → confirm → end", () => {
       experts: { id: string; role: string; color: string; name: string }[];
     };
     expect(createdBody.discussion.status).toBe("ready");
-    expect(createdBody.discussion.plannedTurns).toBe(10);
+    // `plannedTurns` is the coverage floor (2n+2), not a target: 3 experts -> 8.
+    expect(createdBody.discussion.plannedTurns).toBe(8);
     expect(createdBody.experts).toHaveLength(4);
     expect(createdBody.experts.filter((e) => e.role === "host")).toHaveLength(1);
     expect(new Set(createdBody.experts.map((e) => e.color)).size).toBe(4);
@@ -110,8 +111,12 @@ describe("create → detail → confirm → end", () => {
     expect((again.json() as { restarted: boolean }).restarted).toBe(false);
 
     const ended = await waitEnded(app, id);
-    expect(ended.discussion.turnCount).toBe(10);
-    expect(ended.messages).toHaveLength(10);
+    // Closing is driven by argument saturation (or the 36 ceiling), never by the
+    // coverage floor: 8 is only "cannot close earlier than".
+    expect(ended.discussion.turnCount).toBeGreaterThanOrEqual(8);
+    expect(ended.discussion.turnCount).toBeLessThanOrEqual(36);
+    expect(ended.messages).toHaveLength(ended.discussion.turnCount);
+    expect((ended.messages as { intent: string }[]).at(-1)?.intent).toBe("summary");
     expect(ended.summary?.content.length ?? 0).toBeGreaterThan(20);
     // The consensus/divergence panel must not be empty after a full session.
     expect(ended.insights.length).toBeGreaterThan(0);
@@ -131,7 +136,7 @@ describe("create → detail → confirm → end", () => {
       summary: { content: string } | null;
     };
     expect(stateBody.status).toBe("ended");
-    expect(stateBody.turnCount).toBe(10);
+    expect(stateBody.turnCount).toBe(ended.discussion.turnCount);
     expect(stateBody.messages.map((m) => m.id)).toEqual(
       (ended.messages as { id: string }[]).map((m) => m.id),
     );

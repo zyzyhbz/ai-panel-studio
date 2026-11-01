@@ -74,25 +74,68 @@ function describe(spec: PromptSpec): { role: "system" | "user"; content: string 
   ];
 }
 
+/**
+ * Build the chat-completions request body. Pure + exported so the thinking/timeout
+ * configuration can be asserted in tests without any network call.
+ *
+ * Thinking policy (docs/09 §7):
+ * - `enabled`  → send NO toggle at all; the provider's default is thinking on.
+ * - `disabled` → send the explicit off field.
+ * If a provider rejects the field, switch to `enabled` (omit) and record that.
+ */
+export function buildChatBody(input: {
+  model: string;
+  thinking: "enabled" | "disabled";
+  spec: PromptSpec;
+  json: boolean;
+  messages: unknown[];
+}): Record<string, unknown> {
+  const { model, thinking, spec, json, messages } = input;
+  const payload: Record<string, unknown> = {
+    model,
+    messages,
+    temperature: spec.temperature,
+    max_tokens: spec.maxOutputTokens,
+    stream: !json,
+  };
+  if (json) payload.response_format = { type: "json_object" };
+  if (thinking === "disabled") payload.thinking = { type: "disabled" };
+  return payload;
+}
+
+/**
+ * Resolve the thinking toggle for one request.
+ *
+ * - a global `disabled` always wins (operator escape hatch / cheaper runs);
+ * - otherwise the prompt decides per call (`spec.thinking`), defaulting to on.
+ *
+ * This is why SPEECH/SUMMARY can run with thinking on while DECIDE/INSIGHT/ROSTER
+ * stay off: reasoning would eat their small `max_tokens` budget.
+ */
+export function resolveThinking(
+  configThinking: "enabled" | "disabled",
+  specThinking: "enabled" | "disabled" | undefined,
+): "enabled" | "disabled" {
+  if (configThinking === "disabled") return "disabled";
+  return specThinking ?? "enabled";
+}
+
 export function createDeepseekClient(config: DeepseekConfig): LLMClient {
   const client = new OpenAI({
     apiKey: config.apiKey,
     baseURL: config.baseUrl,
     maxRetries: 0,
-    timeout: 60_000,
+    timeout: 120_000,
   });
 
   function body(spec: PromptSpec, json: boolean, messages: unknown[]): Record<string, unknown> {
-    const payload: Record<string, unknown> = {
+    return buildChatBody({
       model: config.model,
+      thinking: resolveThinking(config.thinking, spec.thinking),
+      spec,
+      json,
       messages,
-      temperature: spec.temperature,
-      max_tokens: spec.maxOutputTokens,
-      stream: !json,
-    };
-    if (json) payload.response_format = { type: "json_object" };
-    if (config.thinking === "disabled") payload.thinking = { type: "disabled" };
-    return payload;
+    });
   }
 
   return {

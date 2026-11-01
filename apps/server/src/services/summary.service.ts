@@ -1,4 +1,4 @@
-﻿import {
+import {
   buildFallbackSummary as buildAgentFallbackSummary,
   parseSummaryText,
 } from "@ai-panel/agent";
@@ -50,7 +50,7 @@ export function createSummaryService(deps: CoreDeps): SummaryService {
         const stream = deps.llm.stream({
           prompt,
           signal: AbortSignal.timeout(timeoutMs),
-          firstTokenTimeoutMs: Math.min(6_000, timeoutMs),
+          firstTokenTimeoutMs: Math.min(deps.config.llm.firstTokenTimeoutMs, timeoutMs),
           totalTimeoutMs: timeoutMs,
           meta: {
             discussionId,

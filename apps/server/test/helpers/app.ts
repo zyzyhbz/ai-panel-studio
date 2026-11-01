@@ -5,6 +5,7 @@ import type { AppConfig } from "../../src/config/env";
 import { buildApp, type BuiltApp } from "../../src/app";
 import { openDb } from "../../src/db/connection";
 import { migrate } from "../../src/db/migrate";
+import type { LLMClient } from "../../src/llm/types";
 
 export interface TestConfigOverrides {
   llm?: Omit<Partial<AppConfig["llm"]>, "timeouts"> & {
@@ -32,6 +33,7 @@ export function makeTestConfig(overrides: TestConfigOverrides = {}): AppConfig {
       model: "mock-flash",
       thinking: "disabled",
       maxConcurrency: 4,
+      firstTokenTimeoutMs: 1_500,
       timeouts: {
         roster: 2_000,
         decision: 800,
@@ -68,7 +70,7 @@ export interface TestApp extends BuiltApp {
 }
 
 export async function createTestApp(
-  options: { seed?: boolean; config?: TestConfigOverrides } = {},
+  options: { seed?: boolean; config?: TestConfigOverrides; llm?: LLMClient } = {},
 ): Promise<TestApp> {
   const dir = mkdtempSync(join(tmpdir(), "ai-panel-test-"));
   const dbPath = join(dir, "test.db");
@@ -80,7 +82,14 @@ export async function createTestApp(
     seed(db);
   }
 
-  const config = makeTestConfig({ ...(options.config ?? {}), databasePath: dbPath });  const built = await buildApp({ config, db, recover: false, logger: false });
+  const config = makeTestConfig({ ...(options.config ?? {}), databasePath: dbPath });
+  const built = await buildApp({
+    config,
+    db,
+    recover: false,
+    logger: false,
+    ...(options.llm ? { llm: options.llm } : {}),
+  });
 
   let disposed = false;
   const dispose = async (): Promise<void> => {

@@ -98,8 +98,11 @@ describe("multi-session isolation", () => {
     ).json() as { discussion: { status: string; turnCount: number } };
     expect(detailA.discussion.status).toBe("ended");
     expect(detailB.discussion.status).toBe("ended");
-    expect(detailA.discussion.turnCount).toBe(10);
-    expect(detailB.discussion.turnCount).toBe(10);
+    // Closed by saturation or the 36 ceiling, never before the coverage floor (8).
+    for (const detail of [detailA, detailB]) {
+      expect(detail.discussion.turnCount).toBeGreaterThanOrEqual(8);
+      expect(detail.discussion.turnCount).toBeLessThanOrEqual(36);
+    }
   }, 60_000);
 
   it("keeps insight ids unique across discussions in the same database", async () => {

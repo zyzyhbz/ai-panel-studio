@@ -1,5 +1,5 @@
 import type { DiscussionStatus, InsightType, Intent, Polarity } from "@ai-panel/shared";
-import { plannedTurnsFor } from "@ai-panel/shared";
+import { coverageFloorFor } from "../services/turn-policy";
 import type { Db } from "./connection";
 import { createDiscussionsRepo } from "../repositories/discussions.repo";
 import { createEventsRepo } from "../repositories/events.repo";
@@ -501,7 +501,7 @@ function insertFixture(ctx: SeedCtx, fixture: FixtureSeed): void {
     clientRequestId: seedId("c", fixture.n),
     topic: fixture.topic,
     expertCount: fixture.expertCount,
-    plannedTurns: plannedTurnsFor(fixture.expertCount),
+    plannedTurns: coverageFloorFor(fixture.expertCount),
     qaScenario: null,
     now: metaClock(),
   });

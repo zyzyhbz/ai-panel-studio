@@ -1,5 +1,5 @@
 import type { DiscussionStatus } from "@ai-panel/shared";
-import { DISCUSSION_STATUSES, plannedTurnsFor } from "@ai-panel/shared";
+import { DISCUSSION_STATUSES } from "@ai-panel/shared";
 import type { CoreDeps } from "../context";
 import { AppError } from "../http/errors";
 import {
@@ -23,6 +23,7 @@ import type { DiscussionRecord, ExpertRecord } from "../types";
 import { computeActiveTurn, replayEvents } from "../session/replay";
 import type { SessionManager } from "../session/session-manager";
 import type { RosterService } from "./roster.service";
+import { coverageFloorFor } from "./turn-policy";
 
 export interface DiscussionDetail {
   discussion: ReturnType<typeof toDiscussionDto>;
@@ -184,7 +185,7 @@ export function createDiscussionService(
         clientRequestId: input.clientRequestId,
         topic: input.topic,
         expertCount: input.expertCount,
-        plannedTurns: plannedTurnsFor(input.expertCount),
+        plannedTurns: coverageFloorFor(input.expertCount),
         qaScenario: input.scenario === "normal" ? null : input.scenario,
         now,
       });

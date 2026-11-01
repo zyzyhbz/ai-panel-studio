@@ -109,9 +109,12 @@ export type PersistedEventType = (typeof PERSISTED_EVENT_TYPES)[number];
 
 export function plannedTurnsFor(expertCount: number): number {
   const n = Math.min(6, Math.max(3, Math.trunc(expertCount)));
-  return Math.min(12, Math.max(8, 4 + 2 * n));
+  // Coverage floor, not a target: every expert speaks at least twice, plus the
+  // host opening and at least one probe. Closing before this is not allowed.
+  return Math.min(12, Math.max(8, 2 * n + 2));
 }
 
-export function maxTurnsFor(expertCount: number): number {
-  return Math.min(14, plannedTurnsFor(expertCount) + 2);
+export function maxTurnsFor(_expertCount: number): number {
+  // Safety cap only. The real close signal is argument saturation.
+  return 36;
 }
