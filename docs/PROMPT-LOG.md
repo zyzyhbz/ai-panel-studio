@@ -1,34 +1,17 @@
-# 核心 Prompt 记录文档
+# 核心 Prompt 记录文档（交付物 2）
 
+- 姓名：李荟源
+- 项目：AI Panel Studio — AI 圆桌讨论 Web App MVP
 - 日期：2026-11-01
-- 状态：交付版（7 段，覆盖 SDD / DDD / TDD / E2E + Agent 行为 + 需求拆解 + 迭代）
-- 关联：[WORKFLOW](WORKFLOW.md)、[多 Agent 与阶段映射](08-多Agent协作与阶段映射.md)、[PRD](PRD.md)、[Agent API](AGENT-API.md)、[runtime prompts](prompts/runtime/README.md)
+- 关联：[WORKFLOW](WORKFLOW.md)、[多 Agent 与阶段映射](08-多Agent协作与阶段映射.md)、[runtime prompts](prompts/runtime/README.md)
 
-> 记录原则：保留真正发给 AI 的 Prompt 原文/关键节选，不只写事后总结。完整开发过程记录在 `docs/prompts/devlog/`；运行时 prompt 全文在 `docs/prompts/runtime/`。
-
-## 0. 作者与阶段映射（先看这一节）
-
-本项目采用**多 Agent 角色分工**，不是 PM 一个人按 SDD→DDD→TDD→E2E 顺序手写所有 Prompt。为了避免文档“看起来像全是我写的”，先说明作者：
-
-| 类型 | 作者 | 例子 | 本文位置 |
-| --- | --- | --- | --- |
-| PM→Agent 的任务 / 评审 / 验收 Prompt | 李荟源（PM） | G1 只做设计、BUG-01 空壳、布局 boundingBox、用户反馈改版 | §1–§7 |
-| Agent 运行时 / 实现 Prompt | AI/前端/后端/测试 Agent，PM 审核 | P-SPEECH v2、P-DECIDE v2、debateMap、组件测试、E2E | `docs/prompts/runtime/`、`devlog/` |
-
-阶段与角色的关系是**工程检查点**，不是行政分班：
-
-| 阶段 | 谁主要负责 | PM 实际做什么 |
-| --- | --- | --- |
-| SDD | 后端/前端/测试评审契约 | 下发评审任务、裁决并冻结 v1.0 |
-| DDD | AI/后端/前端定义领域边界 | 定不变量（事件溯源、限界上下文、直播/回放同源） |
-| TDD | 各实现 Agent 写测试 | 提供失败现象/验收标准，审查回归是否真正能抓住 bug |
-| E2E | 测试 Agent | 定义用户旅程与门禁，不替测试改实现 |
-
-详见 [多 Agent 协作与阶段映射](08-多Agent协作与阶段映射.md)。
+> 记录口径：以下是我（李荟源）实际发给各角色 Agent 的核心 Prompt 原文/关键节选。每段后附 1–2 句说明：当时意图、遇到的挑战、如何引导 AI 修正。多 Agent 分工下，PM 写任务/评审/验收 Prompt，Agent 写运行时 Prompt 和部分测试；后者全文在 `docs/prompts/runtime/` 与 `docs/prompts/devlog/`，不冒充全部由我个人手写。
+>
+> 术语说明：作业把 DDD 阶段定义为“前端组件与页面生成”。本文严格按作业口径分段；严格领域驱动设计中的限界上下文、事件溯源等证据在 §2、§4 及 `AGENT-BEHAVIOR.md` 中，避免把“前端设计”偷换成 DDD 的全部。
 
 ---
 
-## 1. 【需求/PRD 阶段】从题目到可执行产品定义
+## 1. 【需求/PRD 阶段】从题目到可执行边界
 
 **原始 Prompt（节选）**
 
@@ -45,19 +28,13 @@
 技术栈需要再单独分析，你需要从产品功能适配度方面给出建议的组合并评估可行性，工程量，难度等。
 ```
 
-**当时意图**
-
-先把题目、用户诉求、角色约束整理成同一份产品定义，不直接进入“让 AI 写代码”。
-
-**挑战与修正**
-
-题目给的是功能清单，用户笔记给的是价值诉求，颗粒度不同；直接写 PRD 容易漏掉“可回放/多议题隔离”。先做技术选型和角色边界，再写 PRD；把“快/全/结构化/回放/透明/多议题”翻译成可验收的 FR/AR/NFR。后续又做了一次 56 项逐条审计，补上工程规则、交付物、提交方式等 12 个缺口。
+**说明**：先把“题目功能清单”和“我真正想做的产品价值”分开，不直接让 AI 写代码；挑战是两者颗粒度不同，直接写 PRD 容易漏掉可回放、多议题隔离，所以先做技术选型、角色边界，再逐条落到 FR/AR/NFR。
 
 **产出**：`PRD.md`、`07-PRD作业对照审计.md`、`01-技术选型.md`、`02-角色与协作SOP.md`
 
 ---
 
-## 2. 【SDD 阶段】数据建模与 API/SSE 契约
+## 2. 【SDD 阶段】数据建模与 API 契约生成
 
 **原始 Prompt（节选）**
 
@@ -75,30 +52,15 @@ G1 任务：只做设计，不写生产代码。
 硬约束：不改共享文档、不写代码、不读 Key。
 ```
 
-**当时意图**
+**说明**：让后端从“能不能实现”反推契约，而不是 PM 单方面写一份看起来合理的 API；挑战是初稿把同步生成、SSE 补发、seq 分配写得太理想，所以要求 AI 逐项评审并列出必须修改项，再由 PM 裁决冻结。
 
-让后端从可实现性反推契约，而不是 PM 单方面写一份“看起来合理”的 API。
-
-**挑战与修正**
-
-PM 初稿把“同步生成阵容”“SSE 补发”“seq 分配”写得太理想；后端指出 15 条必须改，包括 `discussion.failed` 终态事件、`turn.aborted`、`payload_json === SSE data`、幂等键、`/state` 投影接口。PM 裁决后形成 `06-G1契约决议 v1.0`，再进入实现。
-
-**产出**：`ER.md`、`03-API契约.md`、`04-SSE事件契约.md`、`BACKEND-PLAN.md`
+**产出**：`ER.md`、`03-API契约.md`、`04-SSE事件契约.md`、`06-G1契约决议.md`、`BACKEND-PLAN.md`
 
 ---
 
-## 3. 【DDD 阶段】领域模型、限界上下文与呈现层
+## 3. 【DDD 阶段】前端组件与页面生成
 
-DDD 不等于“前端画页面”。本项目先定领域语言与边界：
-
-- 聚合/对象：`Discussion`、`Roster`、`Turn`、`Message`、`Insight`、`Event`；
-- 限界上下文：Agent 行为、服务端运行时、Web 呈现；
-- 防腐层：`LLMClient`、repository、API/SSE 契约；
-- 领域不变量：事件溯源、`seq` 连续、跨会话隔离、直播/回放共用 reducer、`debateMap` 为确定性投影。
-
-下面的 Prompt 是**呈现层限界上下文**的设计任务；完整领域模型证据在 `ER.md`、`06-G1契约决议`、`AGENT-BEHAVIOR.md`、`debate-map.ts`。
-
-**原始 Prompt（PM→前端，节选）**
+**原始 Prompt（节选）**
 
 ```text
 你是 AI Panel Studio 项目的前端工程师。
@@ -115,13 +77,7 @@ G1 任务：只做设计，不写页面代码。
 硬约束：不改共享文档、不写代码、不定义 Agent 行为。
 ```
 
-**当时意图**
-
-先把“演播厅感”拆成布局、组件、状态和动效约束，再让前端写页面，避免做成通用后台。
-
-**挑战与修正**
-
-“沉浸感”是主观词，必须落成三栏布局、专家色、聚光、独立滚动、状态脉冲等可验收项；直播/回放如果各写一套状态必然漂移，所以要求共用 reducer。实现后又发现 1440 下三栏重叠：子项都写着 `grid-area: stage`，媒体查询只改了模板没分配区域；补 `.studio-rail{grid-area:rail}`、`.studio-stage{grid-area:stage}`、90rem 下 `.studio-insights{grid-area:insights}`，并加布局回归。
+**说明**：按作业口径，DDD 阶段落在“前端组件与页面生成”，核心是把“演播厅感”拆成布局、组件、状态和动效约束，而不是做成通用后台；挑战是“沉浸感”太主观、直播/回放各写一套状态会漂移，所以先要求组件树、reducer 边界和低保真线框，再进入页面实现。
 
 **产出**：`FRONTEND-PLAN.md`、`apps/web/**`、`styles.layout.test.ts`
 
@@ -146,19 +102,13 @@ G1 任务：只做设计，不写页面代码。
 硬约束：只写 packages/agent 与 docs，不碰 API/DB/SSE/UI，不读 Key。
 ```
 
-**当时意图**
-
-把 prompt 从“散落在后端/PM 的字符串”变成有 owner、有版本、有 eval 的行为层。
-
-**挑战与修正**
-
-“发言调度”很容易写成另一个后端；必须切开“行为编排（AI）”和“运行时编排（后端）”。最终接口定为：Agent 包提供 `LLMClient` 接口、五类 builder、context、schema、policy、mock；后端实现真实 DeepSeek transport 并注入。运行期 mock 留在后端（绑 QA 钩子），Agent mock 只服务 eval/单测，避免两套生产客户端。
+**说明**：把 prompt 从“散落在后端/PM 的字符串”变成有 owner、有版本、有 eval 的行为层；挑战是“发言调度”很容易写成第二个后端，所以明确切开“行为编排（AI）”与“运行时编排（后端）”，最终定为 `LLMClient` 接口 + 五类 builder + context + schema + policy + mock。
 
 **产出**：`AGENT-BEHAVIOR.md`、`docs/prompts/runtime/` 五份全文、`packages/agent/**`、`evals/`
 
 ---
 
-## 5. 【TDD 阶段】核心逻辑测试与回归
+## 5. 【TDD 阶段】核心逻辑测试与业务实现
 
 **原始 Prompt（节选）**
 
@@ -174,21 +124,13 @@ G1 任务：只做设计，不写页面代码。
 修完把“同库两个讨论都产生洞察且 id 不冲突”写成回归测试。
 ```
 
-**当时意图**
-
-不是“实现完再补测试”，而是用失败用例锁定行为：JSON 合法率、发言长度、洞察 id 全局唯一、结束宽限、断线补发。
-
-> 作者说明：核心不变量和 Bug 回归由 PM 给出现象/验收，后端/前端/测试 Agent 编写具体测试；PM 审查“这条测试是否真能抓住 bug”，不冒充每行测试都是 PM 手写。
-
-**挑战与修正**
-
-最初测试每个用例用全新临时 DB，第一个会话永远不撞洞察主键，所以漏掉了 `UNIQUE constraint failed: insights.id`；真实 smoke 才暴露。修复为 `i_ + sha256(discussionId:type:contentHash)` 派生 id，并新增跨讨论回归。另一个坑是 `empty` mock 仍返回合法 JSON、`long` 文本只有 83 字，测试没真正触发目标路径；修 fixture 后才有意义。
+**说明**：不是“实现完再补测试”，而是用失败用例锁定行为：JSON 合法率、发言长度、洞察 id 全局唯一、结束宽限、断线补发；挑战是洞察 id 用会话内序号导致跨讨论撞主键，修复为 `i_ + sha256(discussionId:type:contentHash)`，并补跨讨论回归。
 
 **产出**：agent 92 tests、server 28 tests、web 42 tests、`docs/prompts/devlog/01-g2-agent-package.md`
 
 ---
 
-## 6. 【E2E 阶段】系统级端到端与质量闭环
+## 6. 【E2E 阶段】系统级端到端测试与质量闭环
 
 **原始 Prompt（节选）**
 
@@ -204,15 +146,7 @@ G1 任务：只做设计，不写页面代码。
 铺满视口；1024 和 390 不出现 body 滚动；首条消息必须落在 stage 栏内。
 ```
 
-**当时意图**
-
-用真实浏览器证明“用户能从头走到尾”，而不是只看单测。
-
-> 作者说明：E2E 代码由测试 Agent 独立编写，PM 只定义用户旅程、门禁与失败验收；测试目录不归 PM 改，避免“自己写测试自己过”。
-
-**挑战与修正**
-
-`MOCK_DELAY_MS=0` 时 12 轮 16ms 就结束，SSE 连上时已是终态，前端只 `localStatus=live` 没回读投影，出现空壳；修复为 confirm 后 `await refresh()` + `stream.ready` 状态不一致时 refresh。Playwright trace 写到中文路径 `ENOENT`，改到 `%TEMP%\ai-panel-e2e`。布局回归最初只断言“存在/可见”，抓不到三栏重叠；改成矩形相交 + 铺满视口 + 首条消息落在 stage 区间，才真正抓住 bug。
+**说明**：用真实浏览器证明“用户能从头走到尾”，而不是只看单测；挑战是 mock 太快导致 SSE 连上时已结束、页面显示空壳，修复为 confirm 后 `await refresh()` + `stream.ready` 状态不一致时 refresh，并把布局断言从“存在/可见”升级成矩形不相交。
 
 **产出**：`e2e/**` 35 条用例、`docs/QA-REPORT.md`、`REAL-SMOKE.md`
 
@@ -229,35 +163,26 @@ G1 任务：只做设计，不写页面代码。
 每个专家时常是沿着自己的角色定义走，其目标不是讨论，不是观点碰撞，而是扮演好自己的角色，
 这违背了讨论的初衷。同时，讨论轮数也不该硬设置为 12 轮，我认为应该设计为至多 36 轮。
 目前的主持人更像是机械操控讨论流程，思考深度不够。
-...演播厅色调过于暗淡...应该 60% 基础中性色 + 30% 低饱和主题色 + 10% 品牌点缀色...
-而且我们这个是圆桌讨论，应该以圆桌形式呈现。
 ```
 
 ```text
 讨论的结束与否应该从观点出发，而不是靠轮数看，我给的轮数只是保底而已。
 ```
 
-**当时意图**
+**说明**：不是加一句“请深刻一点”，而是重写 Agent 行为协议：把“角色扮演”改成“回应具体论点”，把“轮数目标”改成“争点饱和”；挑战是第一版仍用 `plannedTurns` 软目标驱动结束，后来改为 `coverageFloor` 只做保底、`maxTurns=36` 只做安全上限，真正收束由 `saturation.ready` 决定。
 
-不是加一句“请深刻一点”，而是重写 Agent 的行为协议：把“角色扮演”改成“回应具体论点”，把“轮数目标”改成“争点饱和”，并把状态/布局/配色一起改。
-
-**挑战与修正**
-
-第一版把 `plannedTurns` 改成 24–36 的“软目标”，仍然是用轮数驱动结束；用户指出轮数只是保底。于是改成 `coverageFloor = min(12, 2n+2)`（8/10/12/12）只做“不能太早收”，`maxTurns=36` 只做安全上限，真正收束由 `saturation.ready`（每位专家≥2次、最近窗口无新洞察、无阻塞挑战、无新增张力、主持人已施压）决定。第一版 saturation 要求“所有分歧都解决”，实际永远不 ready；修正为“只要求最近窗口没有新张力，旧分歧允许带进总结”，并在总结里显式列出未解决项。
-
-**产出**
-
-`docs/09-深度讨论与圆桌UI改版.md`、`packages/agent/src/context/debate-map.ts`、P-SPEECH/P-DECIDE v2、`RoundTable.tsx`、三套主题、`docs/prompts/devlog/02-deep-debate-rework.md`
+**产出**：`docs/09-深度讨论与圆桌UI改版.md`、`packages/agent/src/context/debate-map.ts`、P-SPEECH/P-DECIDE v2、`RoundTable.tsx`、三套主题、`docs/prompts/devlog/02-deep-debate-rework.md`
 
 ---
 
-## 附：交付映射
+## 附：多范式如何落地
 
-| 题目要求 | 本文件对应 |
-| --- | --- |
-| 记录最核心原始 Prompt | §1–§7 均保留原文/节选 |
-| 明确标注 SDD/DDD/TDD/E2E | §2/§3/§5/§6，多 Agent 映射见 `08-多Agent协作与阶段映射.md` |
-| 每段 1–2 句说明 | 每节“意图/挑战与修正” |
-| ≥5 段 | 7 段 |
-| 运行时 prompt 全文 | `docs/prompts/runtime/` |
-| 开发过程细节 | `docs/prompts/devlog/` |
+| 作业要求的阶段 | 本项目对应 | 关键证据 |
+| --- | --- | --- |
+| SDD：数据建模与 API 契约 | 先冻结 ER/API/SSE，再实现 | `06-G1契约决议`、契约测试、SSE 补发测试 |
+| DDD：前端组件与页面 | 按作业口径做呈现层组件/状态设计 | `FRONTEND-PLAN`、直播/回放共用 reducer、布局回归 |
+| TDD：核心逻辑测试与实现 | 失败用例先行的务实 TDD/回归 | agent 92、server 28、web 42 |
+| E2E：系统级质量闭环 | 独立测试 Agent 跑真实浏览器 | 35 条 Playwright、0 failed / 0 skipped |
+| 多 Agent 分工 | PM + AI/前端/后端/测试 | 目录所有权、任务包、`08-多Agent协作与阶段映射.md` |
+
+> 说明：本项目是 PM + 四个角色 Agent 的分工模式，不是 PM 一个人手写所有 Prompt。本文记录的是 PM 实际下发的核心 Prompt；运行时 Prompt 与部分测试由对应 Agent 编写，PM 审核、版本化、验收。这样既符合作业“核心 Prompt 记录”的要求，也不虚构作者。
