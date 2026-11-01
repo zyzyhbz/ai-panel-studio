@@ -7,7 +7,7 @@
 
 ## 1. 工具链与分工
 
-题目问的是“Claude Code + DeepSeek V4 Pro”。我实际使用的是 **DeepSeek Harness + deepseek-flash**，没有使用 Claude Code；这是本机环境和模型接入决定的。方法可以等价迁移：把每个角色的任务包交给 Claude Code，契约、目录边界、测试门禁不变。文档如实说明，不包装成使用过 Claude Code。
+题目问的是“Claude Code + DeepSeek V4 Pro”。我实际使用的是 **DeepSeek Harness + deepseek-flash**，没有使用 Claude Code；这是本机环境和模型接入决定的。方法可以等价迁移：把每个角色的任务包交给 Claude Code，契约、目录边界、测试门禁不变。
 
 我采用多 Agent 分工，由我统一调度：
 
@@ -81,4 +81,4 @@ AI 能很快写代码，但不会自动对“产品是否成立”负责。我�
 - Prompt：`docs/prompts/runtime/` 五份全文 + `docs/prompts/devlog/`；我下发的任务/验收 Prompt 见 `PROMPT-LOG.md`。
 - 已知限制：真实模型只做 1 场 3 人 smoke；限流未实现；视频/语音/登录为非目标。
 
-> 本文按实际发生的问题记录，不写成“事后包装的完美流程”。
+> 以上按实际发生的问题记录。
