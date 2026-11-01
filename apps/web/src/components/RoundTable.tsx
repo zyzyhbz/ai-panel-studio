@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 import type { Expert } from "../api/types";
 import type { StreamBuffer } from "../domain/streamBuffer";
 import type { SessionView } from "../domain/session";
-import { SpeechBubble } from "./SpeechBubble";
+import { SpeechBubbles } from "./SpeechBubble";
 import {
   EXPERT_STATUS_LABEL,
   expertsOf,
@@ -198,7 +198,7 @@ export function RoundTable({
           }
         />
 
-        <SpeechBubble view={view} buffer={buffer} seatPoints={seatPoints} now={now ?? Date.now()} />
+        <SpeechBubbles view={view} buffer={buffer} seatPoints={seatPoints} now={now ?? Date.now()} />
 
         {activePoint && (
           <div

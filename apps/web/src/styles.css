@@ -403,12 +403,10 @@
      centre. It fades out over ~2s after the completed turn. */
   .round-bubble {
     position: absolute;
-    left: 50%;
-    top: 36%;
     z-index: 3;
-    width: min(54%, 390px);
+    width: clamp(160px, 34%, 300px);
     transform: translate(-50%, -50%);
-    padding: 10px 12px 11px;
+    padding: 9px 11px 10px;
     border: 1px solid var(--color-line-1);
     border-radius: 14px;
     background: var(--color-seat);
@@ -489,21 +487,21 @@
     overflow: hidden;
     margin-top: 3px;
     color: var(--color-ink-2);
-    font-size: 12.5px;
-    line-height: 1.55;
+    font-size: 11.5px;
+    line-height: 1.5;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 4;
+    -webkit-line-clamp: 6;
   }
 
   @media (max-width: 40rem) {
     .round-bubble {
-      width: min(76%, 320px);
+      width: min(70%, 240px);
       padding: 8px 10px 9px;
     }
 
     .round-bubble-text {
-      font-size: 11.5px;
-      -webkit-line-clamp: 5;
+      font-size: 11px;
+      -webkit-line-clamp: 7;
     }
   }
 
