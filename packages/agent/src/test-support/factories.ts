@@ -81,8 +81,9 @@ export function makeSnapshot(overrides: Partial<DiscussionSnapshot> = {}): Discu
     expertCount: 4,
     status: "live",
     turnCount: 0,
-    plannedTurns: 12,
-    maxTurns: 14,
+    // 新模型：覆盖保底由 coverageFloorFor 推导；plannedTurns 只是兼容字段，maxTurns=36 是安全上限
+    plannedTurns: 28,
+    maxTurns: 36,
     experts: [HOST, ...EXPERTS],
     messages: [],
     insights: [],
@@ -97,6 +98,7 @@ export function makeMessage(
   turnIndex: number,
   intent: Intent,
   content: string,
+  extra: { targetMessageId?: string; references?: string[] } = {},
 ): TranscriptMessage {
   const snapshot = makeSnapshot();
   const speaker = snapshot.experts.find((e) => e.id === expertId);
@@ -109,16 +111,27 @@ export function makeMessage(
     content,
     charCount: Array.from(content).length,
     degraded: false,
+    ...extra,
   };
 }
 
-/** 造一串已经发生的发言，turnIndex 从 1 开始连续。 */
+/**
+ * 造一串已经发生的发言。
+ * 第 4 个元素可选：`target`（被回应/被挑战的 messageId），用于构造"未回应挑战"。
+ */
 export function makeHistory(
-  entries: Array<[expertId: string, intent: Intent, content: string]>,
+  entries: Array<[expertId: string, intent: Intent, content: string, target?: string]>,
   startTurn = 1,
 ): TranscriptMessage[] {
-  return entries.map(([expertId, intent, content], index) =>
-    makeMessage(`m_${startTurn + index}`, expertId, startTurn + index, intent, content),
+  return entries.map(([expertId, intent, content, target], index) =>
+    makeMessage(
+      `m_${startTurn + index}`,
+      expertId,
+      startTurn + index,
+      intent,
+      content,
+      target ? { targetMessageId: target } : {},
+    ),
   );
 }
 

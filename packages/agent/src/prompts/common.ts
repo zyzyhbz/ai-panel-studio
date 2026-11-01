@@ -1,5 +1,5 @@
 import type { PromptId, PromptSpec } from "../llm/types";
-import { DEFAULT_LLM_PARAMS, DEFAULT_TIMEOUTS, PROMPT_ID_TO_KIND } from "../llm/types";
+import { DEFAULT_LLM_PARAMS, DEFAULT_TIMEOUTS, PROMPT_ID_TO_KIND, THINKING_BY_PROMPT } from "../llm/types";
 import { estimateTokens } from "../core/text";
 
 /**
@@ -12,11 +12,16 @@ import { estimateTokens } from "../core/text";
  * 版本写进结构化日志，不写进事件 payload。
  */
 export const PROMPT_VERSIONS: Record<PromptId, string> = {
+  // 阵容生成文本未变，保持 1.0.0
   "P-ROSTER": "1.0.0",
-  "P-DECIDE": "1.0.0",
-  "P-SPEECH": "1.0.0",
-  "P-INSIGHT": "1.0.0",
-  "P-SUMMARY": "1.0.0",
+  // v2：按"谁欠谁一个回答"选人、turnFocus 争点化、action=close 接入饱和判定、thinking + 45s
+  "P-DECIDE": "2.0.0",
+  // v2：必须回应具体 messageId、四选一关系、必须新增、禁角色独白、thinking + 90s
+  "P-SPEECH": "2.0.0",
+  // v2：上下文改为争论结构优先（debateMap + 收敛度）、thinking + 45s
+  "P-INSIGHT": "2.0.0",
+  // v2：注入「仍未解决」清单、36 轮硬收需承认没聊完、thinking + 90s
+  "P-SUMMARY": "2.0.0",
 };
 
 /** 所有 prompt 共用的底线规则。 */
@@ -57,7 +62,8 @@ export function makeSpec(input: MakeSpecInput): PromptSpec {
     timeoutMs: input.timeoutMs ?? DEFAULT_TIMEOUTS[input.id],
     estimatedInputTokens: estimateTokens(system) + estimateTokens(user),
     includedMessageIds: input.includedMessageIds ?? [],
-    thinking: "disabled",
+    // JSON control calls stay deterministic; speech/summary get thinking.
+    thinking: THINKING_BY_PROMPT[input.id],
   };
 }
 

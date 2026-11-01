@@ -4,11 +4,15 @@
   "lengthCompliance": 0.98,
   "coverageRate": 1.0,
   "maxExpertShare": 0.35,
-  "hostShareMax": 0.34,
+  "hostShareMax": 0.35,
   "rotationViolations": 0,
   "repetitionRate": 0.05,
   "polarityKinds": 3,
   "evidenceRate": 1.0,
   "summaryParagraphs": 3,
-  "costRmbMax": 0.3
+  "costRmbMax": 1.2,
+  "referenceRate": 0.5,
+  "hostProbeRate": 0.3,
+  "turnsMin": 8,
+  "turnsMax": 36
 }

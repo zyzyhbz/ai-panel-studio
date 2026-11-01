@@ -38,16 +38,19 @@ docs/prompts/
 
 ---
 
-## 1. 五类 Prompt 总表
+## 1. 五类 Prompt 总表（v2，深度讨论改版）
 
-| # | ID | 名称 | 输出形态 | 调用时机 | 次数/场（n=4,12 轮） | 对应需求 |
+| # | ID | 名称 | 输出形态 | 调用时机 | 次数/场（n=4，最长 36 轮） | 对应需求 |
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | `P-ROSTER@v1.0.0` | 阵容生成 | JSON | 创建/重生成 | 1（+≤2 修复） | AR-01、FR-03 |
-| 2 | `P-DECIDE@v1.0.0` | 发言决策 | JSON | 每轮开头 | 12 | AR-03、AR-05 |
-| 3 | `P-SPEECH@v1.0.0` | 专家发言 | 纯文本流式 | 每轮 | 12 | AR-02/04/06、FR-06/08 |
-| 3b | `P-SPEECH/host@v1.0.0` | 主持发言（同族变体） | 纯文本流式 | 开场/追问/串联/转向/收尾 | 4 | AR-02、FR-06/10 |
-| 4 | `P-INSIGHT@v1.0.0` | 共识/分歧提炼 | JSON | 每 2 条专家发言 + 收尾前 | 6 | AR-07、FR-09 |
-| 5 | `P-SUMMARY@v1.0.0` | 总结 | 纯文本三段 | `shouldClose` 后 | 1 | AR-08、FR-10 |
+| 2 | `P-DECIDE@v2.0.0` | 发言决策 | JSON | 每轮开头 | ≤36 | AR-03、AR-05 |
+| 3 | `P-SPEECH@v2.0.0` | 专家发言 | 纯文本流式 | 每轮 | ≤30 | AR-02/04/06、FR-06/08 |
+| 3b | `P-SPEECH/host@v2.0.0` | 主持发言（同族变体） | 纯文本流式 | 开场/追问/串联/转向/收尾 | ≤6 | AR-02、FR-06/10 |
+| 4 | `P-INSIGHT@v2.0.0` | 共识/分歧提炼 | JSON | 每 2 条专家发言 + 收尾前 | ≤16 | AR-07、FR-09 |
+| 5 | `P-SUMMARY@v2.0.0` | 总结 | 纯文本三段 | `saturation.ready` 或到 36 轮 | 1 | AR-08、FR-10 |
+
+> v2 变化：决策按"谁欠谁一个回答"选人（`answer_challenge`/`pressure_test`）；发言必须回应具体 `messageId` 并新增一个理由/反例/边界/代价；总结要把"仍未解决"写进第 3 段。全文见 [runtime/](runtime/README.md)。
+> 轮次不再是目标：`coverageFloor=min(12,2n+2)` 保底、`saturation.ready` 决定收束、36 是安全上限。
 
 > `P-SPEECH/host` 与 `P-SPEECH` **共用输出 schema 与后置校验**，只换"角色段 + 任务段"，因此算一类（五类），不算第六类。理由：分成两个 ID 会让"1–2 句/≤120 字"这类规则在两处漂移；实测两者的输出约束完全一致，仅分型指令不同。
 
@@ -55,19 +58,22 @@ docs/prompts/
 
 ---
 
-## 2. 通用参数与调用策略
+## 2. 通用参数与调用策略（v2）
 
 | 参数 | P-ROSTER | P-DECIDE | P-SPEECH | P-INSIGHT | P-SUMMARY |
 | --- | --- | --- | --- | --- | --- |
 | model | `deepseek-flash` | 同 | 同 | 同 | 同 |
-| thinking | off | off | off | off | off |
+| thinking | enabled（advisory） | enabled | enabled | enabled | enabled |
 | `response_format` | `json_object` | `json_object` | 无 | `json_object` | 无 |
 | temperature | 0.9 | 0.3 | 0.8 | 0.2 | 0.5 |
-| `max_tokens` | 1200 | 120 | 220 | 900 | 500 |
+| `max_tokens` | 1200 | 160 | 220 | 900 | 500 |
 | 输入预算 | 1.5k | 2.6k | 3.0k | 2.4k | 3.5k |
-| 超时 | 20s | 8s | 6s 首字 / 20s 总 | 15s | 25s |
+| 超时 | 30s | **45s** | **20s 首字 / 90s 总** | **45s** | **90s** |
 | 重试 | 1 次（+1 次修复） | 1 次，随后规则兜底 | 1 次（缩短上下文） | 1 次 | 1 次，随后模板 |
 | 流式 | 否 | 否 | 是 | 否 | 是（可选） |
+
+> v2 起真实模式开 `DEEPSEEK_THINKING=enabled`，超时整体放宽（详见 `runtime/README.md`）。
+> `PromptSpec.thinking` 是给 transport 的建议字段，mock 忽略。
 
 工程约定：
 
@@ -91,7 +97,7 @@ docs/prompts/
 | 失败 | 局部修复 → 修复重试（回灌 Zod 错误）→ 模板阵容（`degraded`） |
 | 关键约束 | 主持人必须中立；**必须至少 1 人在反对侧**；不得使用真实公众人物姓名；不得让 4 人共用同一 `stanceAxis` |
 
-### 3.2 `P-DECIDE@v1.0.0`
+### 3.2 `P-DECIDE@v2.0.0`（v1 需求摘要，v2 细节见 [runtime/P-DECIDE.v2.0.0](runtime/P-DECIDE.v2.0.0.md)）
 
 | 项 | 内容 |
 | --- | --- |
@@ -101,7 +107,7 @@ docs/prompts/
 | 失败 | **不重试第二次**，直接规则 fallback（§4.5）。理由：决策是最频繁调用，二次重试的延迟代价大于收益 |
 | 关键约束 | 候选顺序打乱（防轮转）；`reasonCode` 只进日志，绝不进事件 |
 
-### 3.3 `P-SPEECH@v1.0.0`（expert）
+### 3.3 `P-SPEECH@v2.0.0`（expert；v2 细节见 [runtime/P-SPEECH.v2.0.0](runtime/P-SPEECH.v2.0.0.md)）
 
 | 项 | 内容 |
 | --- | --- |
@@ -110,7 +116,7 @@ docs/prompts/
 | 校验 | 句数/字数/重复（3-gram Jaccard）/指代/格式清洗；见 [行为规范 §8.3](../AGENT-BEHAVIOR.md) |
 | 失败 | 一次缩短上下文重试 → 换人 → `turn.aborted`；**不生成本地模板发言**（冒名会污染证据链） |
 
-### 3.3b `P-SPEECH/host@v1.0.0`
+### 3.3b `P-SPEECH/host@v2.0.0`
 
 同族变体：换"角色段"（中立主持）与"分型段"（opening/probe/mediate/redirect/summary 各一段指令），输出仍是纯文本、≤60 字。
 
@@ -122,7 +128,7 @@ docs/prompts/
 | redirect | 指出"还没人谈 X" + 点名未发言者 |
 | summary | 只讲"争出了什么/还差什么"，不复述逐人观点；≤60 字 |
 
-### 3.4 `P-INSIGHT@v1.0.0`
+### 3.4 `P-INSIGHT@v2.0.0`（v2 细节见 [runtime/P-INSIGHT.v2.0.0](runtime/P-INSIGHT.v2.0.0.md)）
 
 | 项 | 内容 |
 | --- | --- |
@@ -131,7 +137,7 @@ docs/prompts/
 | 校验 | evidence id ⊆ 已提供的 id；`type` 3 值；`content` ≤50 字无第一人称；`divergence` 需 ≥2 人证据；数字必须在证据原文出现；与旧条目 3-gram 去重 |
 | 失败 | 保留上一版快照（**不推空**），记 `insight_rejected` 指标 |
 
-### 3.5 `P-SUMMARY@v1.0.0`
+### 3.5 `P-SUMMARY@v2.0.0`（v2 细节见 [runtime/P-SUMMARY.v2.0.0](runtime/P-SUMMARY.v2.0.0.md)）
 
 | 项 | 内容 |
 | --- | --- |

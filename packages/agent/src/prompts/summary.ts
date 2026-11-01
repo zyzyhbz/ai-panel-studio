@@ -1,5 +1,6 @@
 import type { DiscussionSnapshot } from "../core/types";
 import { CONTEXT_BUDGET, assembleContext, renderContextBlock } from "../context/assemble";
+import { buildDebateMap } from "../context/debate-map";
 import type { ContextBundle } from "../context/assemble";
 import type { PromptSpec } from "../llm/types";
 import { insightsForSummary } from "../policy/insight";
@@ -26,6 +27,9 @@ export function buildSummaryPrompt(input: SummaryPromptInput): PromptSpec {
     input.context ??
     assembleContext(snapshot, { purpose: "summary", budgetTokens: CONTEXT_BUDGET.summary });
   const insights = insightsForSummary(snapshot.insights);
+  const debate = buildDebateMap(snapshot);
+  const unresolved = debate.saturation.acceptedUnresolved;
+  const hardCap = snapshot.turnCount >= (snapshot.maxTurns || 36);
 
   const system = `你是这场圆桌的主持人，讨论已经结束，你要给观众一段总结。
 你的总结要让人**不读全文也能拿走结论**，但绝不能编造讨论里没有的东西。
@@ -45,13 +49,21 @@ ${renderContextBlock(context)}
 
 # 已经确认的共识 / 分歧 / 待验证（总结只能以此为准）
 ${insights}
+${
+  unresolved.length > 0
+    ? `\n# 仍未解决（第 3 段必须点到其中 1–2 条，不要含糊带过）\n${unresolved
+        .map((item) => `- ${item}`)
+        .join("\n")}`
+    : ""
+}
+${hardCap ? "\n# 注意\n讨论跑到了安全上限才收，说明还有没聊完的线头——第 3 段要明确说出“哪些问题没被解决”。" : ""}
 ${input.closingLine ? `\n# 你刚才的收尾发言（不要整句重复）\n${input.closingLine}` : ""}
 
 # 写作要求
 1. 写成 **3 段**，段与段之间空一行：
    - 第 1 段：这场在哪些点上形成了共识（如果没有，就直接说“这场没有形成明确共识”）；
    - 第 2 段：主要分歧是什么，双方各是什么主张（要写出争的是什么，不要写“存在不同看法”）；
-   - 第 3 段：还有什么没解决，以及看这场讨论的人可以带走的一个判断。
+   - 第 3 段：还有什么没解决（有「仍未解决」清单时至少点 1–2 条），以及看这场讨论的人可以带走的一个判断。
 2. 总长 180–320 字；每段 1–3 句。
 3. 语气像主持人在收尾，可以有一句态度，但不要煽情。
 4. 不逐个人复述观点，不写“某某说……某某又说……”。

@@ -46,6 +46,7 @@ describe("buildRosterPrompt", () => {
     expect(spec.responseFormat).toBe("json_object");
     expect(spec.temperature).toBeGreaterThan(0.5);
     expect(spec.maxOutputTokens).toBe(1200);
+    // Roster is a JSON control call: reasoning must not eat the output budget.
     expect(spec.thinking).toBe("disabled");
   });
 
@@ -94,14 +95,18 @@ describe("buildDecisionPrompt", () => {
   it("收尾轮会明确写 mustClose=true", () => {
     const closing = makeSnapshot({
       messages: makeHistory(
-        Array.from({ length: 11 }, (_, i) => [`e_${(i % 4) + 1}`, "extend" as const, `第 ${i} 条。`]),
+        Array.from({ length: 35 }, (_, i) => [
+          `e_${(i % 4) + 1}`,
+          "extend" as const,
+          `第 ${i} 条观点，内容各不相同。`,
+        ]),
       ),
-      turnCount: 11,
+      turnCount: 35,
     });
     const closingEligibility = buildEligibility(closing);
     const closingSpec = buildDecisionPrompt({ snapshot: closing, eligibility: closingEligibility });
     expect(closingEligibility.mustClose).toBe(true);
-    expect(closingSpec.user).toContain("现在必须收尾：true");
+    expect(closingSpec.user).toContain("可以收尾：true");
   });
 });
 

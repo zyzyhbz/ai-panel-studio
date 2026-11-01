@@ -75,7 +75,7 @@ export type InsightDraft = {
 
 export { buildRosterPrompt, paletteSummary, type RosterPromptInput } from "./prompts/roster";
 export { buildDecisionPrompt, type DecisionPromptInput } from "./prompts/decision";
-export { buildSpeechPrompt, speechPreview, type SpeechPromptInput } from "./prompts/speech";
+export { buildSpeechPrompt, type SpeechPromptInput } from "./prompts/speech";
 export { buildInsightPrompt, type InsightPromptInput } from "./prompts/insight";
 export { buildSummaryPrompt, type SummaryPromptInput } from "./prompts/summary";
 export { PROMPT_VERSIONS, SHARED_RULES, bulletList, makeSpec, repairBlock } from "./prompts/common";
@@ -105,6 +105,26 @@ export {
   type ContextPurpose,
   type TurnPlan,
 } from "./context/assemble";
+
+/* 轮次与收敛常量（以观点饱和为准，轮数只是保底） */
+export { MAX_TURNS, MIN_EXPERT_SPEAKS, STALE_WINDOW, coverageFloorFor } from "./core/rounds";
+
+/* 争论结构（debateMap）：确定性投影，不调 LLM */
+export {
+  MAX_PREMISES,
+  MAX_TENSIONS,
+  MAX_UNANSWERED,
+  buildDebateMap,
+  challengeTargets,
+  isEmptyDebateMap,
+  isLikelyNovel,
+  renderDebateMap,
+  renderSaturation,
+  type DebateClaim,
+  type DebateMap,
+  type Saturation,
+  type UnansweredChallenge,
+} from "./context/debate-map";
 
 /* ------------------------------------------------------------------ */
 /* 输出 schema 与解析                                                  */
@@ -148,7 +168,9 @@ export {
 export {
   CONSECUTIVE_HARD_LIMIT,
   EXPERT_CAP_EXTRA,
-  HOST_TURN_LIMIT,
+  HOST_TURN_MIN,
+  HOST_TURN_MAX,
+  hostTurnLimit,
   buildEligibility,
   closingIntent,
   consecutiveTail,

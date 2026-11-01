@@ -30,6 +30,10 @@ interface Thresholds {
   evidenceRate: number;
   summaryParagraphs: number;
   costRmbMax: number;
+  referenceRate: number;
+  hostProbeRate: number;
+  turnsMin: number;
+  turnsMax: number;
 }
 
 export interface Metrics {
@@ -45,6 +49,11 @@ export interface Metrics {
   hostShare: number;
   rotationViolations: number;
   repetitionRate: number;
+  referenceRate: number;
+  rebutSupportRatio: number;
+  noveltyRate: number;
+  hostProbeRate: number;
+  selfRepeatRate: number;
   polarityKinds: number;
   hasOppose: boolean;
   evidenceRate: number;
@@ -83,17 +92,21 @@ function maxConsecutive(messages: { expertId: string }[]): number {
   return max;
 }
 
-/** 是否出现周期 2–4、重复 ≥2 次的"机械轮转"序列。 */
+/**
+ * 是否出现周期 2–4、**连续**重复 ≥3 轮的"机械轮转"序列。
+ * 只统计连续重复（一旦断掉就停），否则 36 轮里偶然撞上一对分片就会被误判。
+ */
 function rotationViolations(messages: { expertId: string }[]): number {
   const ids = messages.map((m) => m.expertId);
   let violations = 0;
   for (const period of [2, 3, 4]) {
-    if (ids.length < period * 2 + 1) continue;
-    for (let start = 0; start + period * 2 < ids.length; start += 1) {
+    if (ids.length < period * 3) continue;
+    for (let start = 0; start + period * 3 <= ids.length; start += 1) {
       let repeats = 0;
       for (let i = start + period; i + period <= ids.length; i += period) {
         const same = ids.slice(i, i + period).every((id, k) => id === ids[start + k]);
-        if (same) repeats += 1;
+        if (!same) break;
+        repeats += 1;
       }
       if (repeats >= 2) {
         violations += 1;
@@ -151,6 +164,41 @@ function computeMetrics(result: SimulationResult): Metrics {
     (result.inputTokens / 1_000_000) * PRICE_INPUT_USD_PER_M +
     (result.outputTokens / 1_000_000) * PRICE_OUTPUT_USD_PER_M;
 
+  // ── 改版新增指标（引用率 / 反驳支持比 / 新论点率 / 主持人追问率 / 自我重复率）──
+  const debatable = messages.filter((m) => m.intent !== "opening");
+  const referenced = debatable.filter(
+    (m) => Boolean(m.targetMessageId) || (m.references?.length ?? 0) > 0,
+  ).length;
+  const referenceRate = debatable.length === 0 ? 1 : referenced / debatable.length;
+
+  const rebutCount = messages.filter((m) => m.intent === "rebut").length;
+  const supportCount = messages.filter((m) => m.intent === "support").length;
+  const rebutSupportRatio = rebutCount / Math.max(1, supportCount);
+
+  // 新论点率：与之前所有发言的 3-gram 相似度都 < 0.5 才算"新东西"
+  const novel = messages.filter((message, index) =>
+    messages
+      .slice(0, index)
+      .every((previous) => char3GramJaccard(message.content, previous.content) < 0.5),
+  ).length;
+  const noveltyRate = messages.length === 0 ? 0 : novel / messages.length;
+
+  const hostProbeRate =
+    hostMessages.length === 0
+      ? 1
+      : hostMessages.filter((m) => m.intent === "probe" || m.intent === "mediate").length /
+        hostMessages.length;
+
+  // 自我重复率：同一人后一次发言与他自己之前某次高度相似
+  let selfRepeats = 0;
+  for (const [index, message] of messages.entries()) {
+    const ownEarlier = messages.slice(0, index).filter((m) => m.expertId === message.expertId);
+    if (ownEarlier.some((m) => char3GramJaccard(m.content, message.content) > 0.6)) {
+      selfRepeats += 1;
+    }
+  }
+  const selfRepeatRate = messages.length === 0 ? 0 : selfRepeats / messages.length;
+
   return {
     fixture: result.fixture.id,
     topic: result.fixture.topic,
@@ -165,6 +213,11 @@ function computeMetrics(result: SimulationResult): Metrics {
     hostShare: messages.length === 0 ? 0 : hostMessages.length / messages.length,
     rotationViolations: rotationViolations(messages),
     repetitionRate: adjacentRepetitionRate(messages),
+    referenceRate,
+    rebutSupportRatio,
+    noveltyRate,
+    hostProbeRate,
+    selfRepeatRate,
     polarityKinds: new Set(experts.map((e) => e.polarity)).size,
     hasOppose: experts.some((e) => e.polarity === "oppose" || e.polarity === "strong_oppose"),
     evidenceRate: result.insights.length === 0 ? 1 : withEvidence / result.insights.length,
@@ -216,6 +269,23 @@ function evaluate(metrics: Metrics[], thresholds: Thresholds): Check[] {
     { name: "总结段数", value: min((m) => m.summaryParagraphs), threshold: thresholds.summaryParagraphs, ok: metrics.every((m) => m.summaryParagraphs === thresholds.summaryParagraphs) },
     { name: "总结无 JSON 痕迹", value: metrics.every((m) => !m.summaryJsonLeak) ? "全部" : "有泄漏", threshold: "全部", ok: metrics.every((m) => !m.summaryJsonLeak) },
     { name: "单场成本（¥，最大）", value: Math.max(...metrics.map((m) => m.costRmb)), threshold: thresholds.costRmbMax, ok: Math.max(...metrics.map((m) => m.costRmb)) <= thresholds.costRmbMax },
+    { name: "引用率（回应具体发言）", value: avg((m) => m.referenceRate), threshold: thresholds.referenceRate, ok: min((m) => m.referenceRate) >= thresholds.referenceRate },
+    { name: "主持人追问率", value: avg((m) => m.hostProbeRate), threshold: thresholds.hostProbeRate, ok: min((m) => m.hostProbeRate) >= thresholds.hostProbeRate },
+    { name: "平均轮次下限", value: min((m) => m.turns), threshold: thresholds.turnsMin, ok: min((m) => m.turns) >= thresholds.turnsMin },
+    { name: "轮次不超上限", value: Math.max(...metrics.map((m) => m.turns)), threshold: thresholds.turnsMax, ok: Math.max(...metrics.map((m) => m.turns)) <= thresholds.turnsMax },
+  ];
+}
+
+/** 参考指标：mock 的固定台词决定了它们不可作门禁，只用于观察趋势。 */
+function infoMetrics(metrics: Metrics[]): Array<{ name: string; value: string }> {
+  const avg = (pick: (m: Metrics) => number): number =>
+    metrics.reduce((sum, m) => sum + pick(m), 0) / Math.max(1, metrics.length);
+  return [
+    { name: "反驳:支持比", value: avg((m) => m.rebutSupportRatio).toFixed(2) },
+    { name: "新论点率（mock 参考）", value: pct(avg((m) => m.noveltyRate)) },
+    { name: "自我重复率（mock 参考）", value: pct(avg((m) => m.selfRepeatRate)) },
+    { name: "平均轮次", value: avg((m) => m.turns).toFixed(1) },
+    { name: "平均洞察条数", value: avg((m) => m.insightCount).toFixed(1) },
   ];
 }
 
@@ -239,19 +309,23 @@ function toMarkdown(metrics: Metrics[], checks: Check[], latencyMs: number): str
   lines.push("");
   lines.push("## 逐场指标");
   lines.push("");
-  lines.push("| 议题 | 轮次 | JSON | 1–2句 | 字数 | 覆盖 | 最大占比 | 主持占比 | 轮转 | 重复 | 极性 | 洞察 | 总结段 | 成本(¥) |");
-  lines.push("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |");
+  lines.push("| 议题 | 轮次 | JSON | 1–2句 | 字数 | 覆盖 | 最大占比 | 主持占比 | 引用率 | 追问率 | 轮转 | 重复 | 极性 | 洞察 | 总结段 | 成本(¥) |");
+  lines.push("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |");
   for (const m of metrics) {
     lines.push(
       `| ${m.fixture}（${m.expertCount}人） | ${m.turns} | ${pct(m.jsonLegalRate)} | ${pct(
         m.sentenceCompliance,
       )} | ${pct(m.lengthCompliance)} | ${pct(m.coverageRate)} | ${pct(m.maxExpertShare)} | ${pct(
         m.hostShare,
-      )} | ${m.rotationViolations} | ${pct(m.repetitionRate)} | ${m.polarityKinds} | ${m.insightCount} | ${
-        m.summaryParagraphs
-      } | ${m.costRmb.toFixed(3)} |`,
+      )} | ${pct(m.referenceRate)} | ${pct(m.hostProbeRate)} | ${m.rotationViolations} | ${pct(
+        m.repetitionRate,
+      )} | ${m.polarityKinds} | ${m.insightCount} | ${m.summaryParagraphs} | ${m.costRmb.toFixed(3)} |`,
     );
   }
+  lines.push("");
+  lines.push("## 参考指标（不设门禁）");
+  lines.push("");
+  for (const item of infoMetrics(metrics)) lines.push(`- ${item.name}：${item.value}`);
   lines.push("");
   lines.push("## 门禁判定");
   lines.push("");

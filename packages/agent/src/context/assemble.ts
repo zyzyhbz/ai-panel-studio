@@ -7,6 +7,9 @@ import type {
   TurnPhase,
 } from "../core/types";
 import { estimateTokens, truncateChars } from "../core/text";
+import { coverageFloorFor, MAX_TURNS } from "../core/rounds";
+import { buildDebateMap, renderDebateMap, renderSaturation, type DebateMap } from "./debate-map";
+export { renderSaturation } from "./debate-map";
 
 /**
  * 上下文组装（AR-05）。
@@ -42,6 +45,10 @@ export interface ContextBundle {
   purpose: ContextPurpose;
   topic: string;
   plan: TurnPlan;
+  /** 争论结构（确定性投影）：未回应挑战 / 当前主张 / 张力 / 被回避前提 */
+  debateMap: DebateMap;
+  /** 渲染好的争论结构段落（prompt 的第一段） */
+  debateText: string;
   /** 渲染好的参会者段落（每行一人） */
   personas: string;
   /** 渲染好的现场段落（新→旧） */
@@ -64,24 +71,30 @@ export interface AssembleOptions {
   budgetTokens?: number;
   fullWindow?: number;
   digestWindow?: number;
+  /** 由 eligibility 决定；只影响渲染出来的"是否必须收尾" */
+  mustClose?: boolean;
   /** 决策调用时把"可选发言者"排除在外的 message 不需要额外处理 */
   extraBudgetReserve?: number;
 }
 
-export function planFor(snapshot: DiscussionSnapshot): TurnPlan {
-  const turnIndex = Math.min(snapshot.turnCount + 1, snapshot.maxTurns + 1);
+export function planFor(snapshot: DiscussionSnapshot, mustClose = false): TurnPlan {
+  const coverageFloor = coverageFloorFor(snapshot.expertCount);
+  const maxTurns = Math.min(MAX_TURNS, snapshot.maxTurns || MAX_TURNS);
+  const turnIndex = Math.min(snapshot.turnCount + 1, maxTurns + 1);
   return {
     turnIndex,
-    plannedTurns: snapshot.plannedTurns,
-    maxTurns: snapshot.maxTurns,
-    phase: phaseFor(turnIndex, snapshot.plannedTurns),
-    mustClose: turnIndex >= snapshot.plannedTurns,
+    // 兼容字段：现在表示"覆盖保底"，不是目标轮次
+    plannedTurns: coverageFloor,
+    maxTurns,
+    phase: mustClose ? "close" : phaseFor(turnIndex, coverageFloor),
+    mustClose,
   };
 }
 
 export function phaseFor(turnIndex: number, plannedTurns: number): TurnPhase {
   if (turnIndex <= 1) return "open";
-  if (turnIndex >= plannedTurns) return "close";
+  // 到软目标后进入"可收束窗口"，是否真的收由主持人与饱和条件决定
+  if (turnIndex >= plannedTurns) return "preclose";
   if (turnIndex === plannedTurns - 1) return "preclose";
   const ratio = turnIndex / plannedTurns;
   if (ratio <= 0.35) return "expand";
@@ -166,10 +179,13 @@ export function assembleContext(
   const fullWindow = options.fullWindow ?? FULL_WINDOW;
   const digestWindow = options.digestWindow ?? DIGEST_WINDOW;
 
-  const plan = planFor(snapshot);
+  const plan = planFor(snapshot, options.mustClose);
   const personas = snapshot.experts.map(personaLine).join("\n");
   const digest = buildDigest(snapshot);
   const insightsText = renderInsights(snapshot.insights);
+  // 争论结构放在最前面：模型先看到"谁欠谁一个回答"，才不会退回角色扮演
+  const debateMap = buildDebateMap(snapshot);
+  const debateText = `${renderDebateMap(debateMap)}\n\n${renderSaturation(debateMap.saturation)}`;
 
   const ordered = [...snapshot.messages].sort((a, b) => b.turnIndex - a.turnIndex);
   const recent = ordered.slice(0, fullWindow);
@@ -180,6 +196,7 @@ export function assembleContext(
 
   const fixedBudget =
     estimateTokens(planText(plan, snapshot)) +
+    estimateTokens(debateText) +
     estimateTokens(personas) +
     estimateTokens(insightsText) +
     estimateTokens(digest) +
@@ -212,6 +229,8 @@ export function assembleContext(
     purpose,
     topic: snapshot.topic,
     plan,
+    debateMap,
+    debateText,
     personas,
     transcript,
     olderDigest,
@@ -227,7 +246,7 @@ export function assembleContext(
 export function planText(plan: TurnPlan, snapshot: DiscussionSnapshot): string {
   const host = snapshot.experts.filter((e) => e.role === "host").length;
   return [
-    `第 ${plan.turnIndex} 轮 / 计划 ${plan.plannedTurns} 轮 / 硬上限 ${plan.maxTurns} 轮`,
+    `第 ${plan.turnIndex} 轮 / 覆盖保底 ${plan.plannedTurns} 轮 / 安全上限 ${plan.maxTurns} 轮`,
     `阶段：${phaseLabel(plan.phase)}`,
     `专家 ${snapshot.expertCount} 人 + 主持 ${host} 人`,
     `已完成发言 ${snapshot.turnCount} 条`,
@@ -292,14 +311,15 @@ export function renderInsights(insights: InsightItem[]): string {
     .join("\n");
 }
 
-/** 把 context 渲染成 prompt 里统一的「现场」段落。 */
+/** 把 context 渲染成 prompt 里统一的段落；**争论结构在最前面**。 */
 export function renderContextBlock(bundle: ContextBundle): string {
   const parts: string[] = [];
-  parts.push(`# 参会者（顺序不代表发言次序）\n${bundle.personas}`);
+  parts.push(bundle.debateText);
+  parts.push(`# 参会者（顺序不代表发言次序，先看上面的争论结构）\n${bundle.personas}`);
   parts.push(
     bundle.transcript
-      ? `# 现场（新→旧，最多 ${FULL_WINDOW} 条）\n${bundle.transcript}`
-      : "# 现场\n（还没有人发言）",
+      ? `# 现场原文（新→旧，最多 ${FULL_WINDOW} 条）\n${bundle.transcript}`
+      : "# 现场原文\n（还没有人发言）",
   );
   if (bundle.olderDigest) {
     parts.push(`# 更早的发言（一行式）\n${bundle.olderDigest}`);

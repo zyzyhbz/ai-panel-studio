@@ -59,7 +59,7 @@ export interface PromptSpec {
   estimatedInputTokens?: number;
   /** 本 prompt 里出现的 transcript messageId，用于 QA_LLM_LOG.includedMessageIds */
   includedMessageIds?: string[];
-  /** 实时链路必须关闭 thinking；transport 应据此设置 provider 参数 */
+  /** 本 prompt 是否请求 provider thinking；reasoning 永不进入公开事件。 */
   thinking?: "disabled" | "enabled";
 }
 
@@ -186,26 +186,47 @@ export class LlmError extends Error {
   }
 }
 
-/** 默认参数（AR-10：默认 deepseek-flash、关闭 thinking）。 */
+/** 默认参数（AR-10：默认 deepseek-flash；thinking 按 prompt 分配）。 */
 export const DEFAULT_LLM_PARAMS: Record<
   PromptId,
   { temperature: number; maxOutputTokens: number; responseFormat: "text" | "json_object" }
 > = {
   "P-ROSTER": { temperature: 0.9, maxOutputTokens: 1200, responseFormat: "json_object" },
-  "P-DECIDE": { temperature: 0.3, maxOutputTokens: 160, responseFormat: "json_object" },
-  "P-SPEECH": { temperature: 0.8, maxOutputTokens: 220, responseFormat: "text" },
+  "P-DECIDE": { temperature: 0.3, maxOutputTokens: 240, responseFormat: "json_object" },
+  // Thinking is enabled for speech/summary, so the output budget must cover
+  // private reasoning + the public 1–2 sentences.
+  "P-SPEECH": { temperature: 0.8, maxOutputTokens: 1200, responseFormat: "text" },
   "P-INSIGHT": { temperature: 0.2, maxOutputTokens: 900, responseFormat: "json_object" },
-  "P-SUMMARY": { temperature: 0.5, maxOutputTokens: 500, responseFormat: "text" },
+  "P-SUMMARY": { temperature: 0.5, maxOutputTokens: 1400, responseFormat: "text" },
 };
 
-/** 超时预算（与 AGENT-BEHAVIOR §0 常量表一致）。 */
+/**
+ * Per-prompt thinking policy.
+ *
+ * JSON-only control calls stay off: with a small max_tokens budget the model
+ * can spend everything on reasoning and return an empty `content`, which breaks
+ * decisions/insights. Expert speech and the host summary get thinking because
+ * that is where argument depth actually matters.
+ */
+export const THINKING_BY_PROMPT: Record<PromptId, "enabled" | "disabled"> = {
+  "P-ROSTER": "disabled",
+  "P-DECIDE": "disabled",
+  "P-SPEECH": "enabled",
+  "P-INSIGHT": "disabled",
+  "P-SUMMARY": "enabled",
+};
+
+/**
+ * 超时预算（09-深度讨论 §7：开启 thinking 后要放宽）。
+ * decision 45s / speech 90s / insight 45s / summary 90s；首 token 20s。
+ */
 export const DEFAULT_TIMEOUTS: Record<PromptId, number> = {
-  "P-ROSTER": 20_000,
-  "P-DECIDE": 8_000,
-  "P-SPEECH": 20_000,
-  "P-INSIGHT": 15_000,
-  "P-SUMMARY": 25_000,
+  "P-ROSTER": 30_000,
+  "P-DECIDE": 45_000,
+  "P-SPEECH": 90_000,
+  "P-INSIGHT": 45_000,
+  "P-SUMMARY": 90_000,
 };
 
-/** 发言首 token 超时（流式专用）。 */
-export const SPEECH_FIRST_TOKEN_TIMEOUT_MS = 6_000;
+/** 发言首 token 超时（流式专用；thinking 模式下首 token 会明显变慢）。 */
+export const SPEECH_FIRST_TOKEN_TIMEOUT_MS = 20_000;

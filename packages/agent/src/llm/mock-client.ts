@@ -50,7 +50,7 @@ export interface MockClientOptions {
   chunkSize?: number;
 }
 
-const FALLBACK_FOCUS = "讨论的推进方向";
+const FALLBACK_FOCUS = "这一轮到底该争什么？";
 const INTENT_CYCLE = ["rebut", "extend", "support", "clarify"] as const;
 
 export class MockLLMClient implements LLMClient {
@@ -295,7 +295,7 @@ export class MockLLMClient implements LLMClient {
         speakerId: host.id,
         intent: "probe",
         targetMessageId: meta?.messageIds?.at(-1),
-        turnFocus: "把说法落到具体例子上",
+        turnFocus: "这个说法到底靠什么成立？",
         action: "next",
         reasonCode: "follow_up",
       });
@@ -306,7 +306,7 @@ export class MockLLMClient implements LLMClient {
         speakerId: host.id,
         intent: "mediate",
         references: pickTwoSpeakerIds(meta),
-        turnFocus: "两种说法在争什么",
+        turnFocus: "你们其实在争什么？",
         action: "next",
         reasonCode: "follow_up",
       });
@@ -323,17 +323,23 @@ export class MockLLMClient implements LLMClient {
       });
     }
 
-    // 先按"谁说得少"再按稳定哈希挑人：既均衡、又不是名单序或固定周期
+    // 先按"谁说得少"、再按"最近 4 条里出现过几次"，最后按稳定哈希：
+    // 既均衡，又不会退化成 A/B 交替（那是机械轮转）
     const speakCounts = new Map<string, number>();
     for (const id of meta?.messageSpeakerIds ?? []) {
       speakCounts.set(id, (speakCounts.get(id) ?? 0) + 1);
     }
+    const recentIds = (meta?.messageSpeakerIds ?? []).slice(-4);
+    const recentCount = (id: string): number => recentIds.filter((x) => x === id).length;
     const lastSpeakerId = meta?.messageSpeakerIds?.at(-1);
     const seed = `${meta?.discussionId ?? "d"}|${turn}`;
     const ordered = [...experts].sort((a, b) => {
       const ca = speakCounts.get(a.id) ?? 0;
       const cb = speakCounts.get(b.id) ?? 0;
       if (ca !== cb) return ca - cb;
+      const ra = recentCount(a.id);
+      const rb = recentCount(b.id);
+      if (ra !== rb) return ra - rb;
       return hash32(`${seed}|${a.id}`).localeCompare(hash32(`${seed}|${b.id}`));
     });
     const speaker =

@@ -203,7 +203,8 @@ describe("MockLLMClient 全链路（E1，4 人）", () => {
     const result = await runMockSession(fixture);
 
     expect(result.messages.length).toBeGreaterThanOrEqual(8);
-    expect(result.messages.length).toBeLessThanOrEqual(12);
+    // 新轮次模型：覆盖保底只是下限，最长到安全上限 36
+    expect(result.messages.length).toBeLessThanOrEqual(36);
     expect(result.messages[0]?.intent).toBe("opening");
 
     const spoken = new Set(result.messages.map((m) => m.expertId));

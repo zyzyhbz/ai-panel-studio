@@ -1,9 +1,26 @@
-# P-SUMMARY v1.0.0（主持人总结）
+# P-SUMMARY v1.0.0 / v1.1.0（主持人总结）
 
 - 实现：`packages/agent/src/prompts/summary.ts`
 - 输出：**纯文本三段** → `parseSummaryText` → `normalizeSummary` / `buildFallbackSummary`
-- 参数：`deepseek-flash` / thinking off / text / temperature 0.5 / max 500 tokens / 超时 25s
+- 参数：`deepseek-flash` / **thinking 开启（v1.1）** / text / temperature 0.5 / max 500 tokens / 超时 **90s（v1.1）**
 - 对应：AR-08；FR-10（自然语言、不显示 JSON）；契约 §1.4（`isFallback`）
+
+## v1.1 新增：把「仍未解决」写进第 3 段
+
+深度讨论改版后，讨论可能带着旧分歧收束（这是允许的），但必须**明确说出来**，不能用"总体上都认为"糊过去。
+实现方式：`buildDebateMap(snapshot).saturation.acceptedUnresolved`（超窗口的旧挑战 + 旧张力）直接注入 prompt：
+
+```text
+# 仍未解决（第 3 段必须点到其中 1–2 条，不要含糊带过）
+- 「再培训成本该谁承担」由许澜提出，陈默未正面回答
+- 分歧在于这是压缩还是重构
+
+# 注意
+讨论跑到了安全上限才收，说明还有没聊完的线头——第 3 段要明确说出“哪些问题没被解决”。
+```
+
+第 3 段的写作要求同步改为：**还有什么没解决（有「仍未解决」清单时至少点 1–2 条）** + 一个可带走的判断。
+这一条是 `summary` 与 `hard_cap` 语义对齐的关键：36 轮硬收时必须承认"没聊完"。
 
 ## 为什么是纯文本
 

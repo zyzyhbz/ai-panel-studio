@@ -99,13 +99,23 @@ export function validateDecision(
   return { ok: issues.length === 0, issues };
 }
 
+/**
+ * turnFocus 的写法：**争点/问题**，不是名词标签。
+ * 允许以 ？ 结尾；至少要有"争"的形态（问号，或 是否/该不该/到底/谁/为什么/怎么/能不能/A 还是 B）。
+ */
+const CONTENTION_MARKER =
+  /？$|是否|该不该|到底|为什么|怎么|谁|能不能|算不算|值不值|还是|多少|哪一|有没有/;
+
 export function validateTurnFocus(turnFocus: string): string | null {
   const text = turnFocus.trim();
-  if (text.length < 2) return "turnFocus 太短";
-  if (text.length > 20) return "turnFocus 超过 20 字";
+  if (text.length < 4) return "turnFocus 太短，写不出一个争点";
+  if (text.length > 24) return "turnFocus 超过 24 字";
   if (META_FOCUS.test(text)) return "turnFocus 出现了思考过程用语";
-  if (ACTION_FOCUS.test(text)) return "turnFocus 写成了发言动作，应写关注点";
-  if (/[。！？!?]$/u.test(text)) return "turnFocus 不应带句末标点";
+  if (ACTION_FOCUS.test(text)) return "turnFocus 写成了发言动作，应写争点";
+  if (/[。！!]$/u.test(text)) return "turnFocus 不应带句号或感叹号（问号可以）";
+  if (!CONTENTION_MARKER.test(text)) {
+    return "turnFocus 写成了名词标签，应写成争点或问题（例：再培训成本到底该谁承担？）";
+  }
   return null;
 }
 
@@ -157,6 +167,13 @@ export function sanitizeDecision(
   if (!eligibility.mustClose && intent === "summary") {
     issues.push({ code: "CLOSE_NOT_ALLOWED", detail: "未到收尾轮，summary 降级为 extend" });
     intent = "extend";
+  }
+  // action=close 只在"真的该收了"（饱和或到安全上限）时接受
+  if (decision.action === "close" && !eligibility.mustClose) {
+    issues.push({
+      code: "CLOSE_NOT_ALLOWED",
+      detail: `还没收敛（${eligibility.saturation.reasons.join("；") || "未进入可收束窗口"}），忽略 close`,
+    });
   }
 
   let targetMessageId = decision.targetMessageId;
@@ -243,10 +260,17 @@ function twoSpeakerReferences(snapshot: DiscussionSnapshot): string[] | undefine
   return undefined;
 }
 
+/**
+ * 兜底争点：把立场轴改写成一句"争点"。
+ * `岗位替代 vs 岗位重构` → `岗位替代还是岗位重构？`
+ */
 function fallbackFocus(stanceAxis: string | undefined, snapshot: DiscussionSnapshot): string {
-  const axis = stanceAxis?.trim();
-  if (axis && axis.length >= 2 && axis.length <= 20) return axis;
+  const axis = stanceAxis?.trim().replace(/\s+vs\.?\s+/iu, "还是");
+  if (axis && axis.length >= 4 && axis.length <= 22) return `${axis}？`;
   const topic = snapshot.topic.trim();
-  if (topic.length >= 2 && topic.length <= 20) return topic;
-  return "本轮的判断依据";
+  if (topic.length >= 4) {
+    const trimmed = topic.length > 20 ? `${topic.slice(0, 20)}` : topic;
+    return /？$/.test(trimmed) ? trimmed : `${trimmed}？`;
+  }
+  return "这一轮到底该争什么？";
 }

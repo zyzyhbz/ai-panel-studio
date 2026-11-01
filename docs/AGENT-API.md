@@ -42,7 +42,7 @@ import {
 3. 可选：`apps/server/src/llm/fixtures.ts` 可以继续用；本包的 `TOPIC_FIXTURES` 是给 eval 的 5 个议题，两者不冲突。
 
 > 注意：`PromptSpec` 增加了若干**可选**字段（`id/version/timeoutMs/estimatedInputTokens/includedMessageIds/thinking`）。
-> 后端原样转发即可；`includedMessageIds` 建议写进 `QA_LLM_LOG`，`thinking` 固定 `"disabled"`。
+> 后端按 `spec.thinking` 转发；全局 `DEEPSEEK_THINKING=disabled` 优先。JSON 控制调用（ROSTER/DECIDE/INSIGHT）默认关 thinking，SPEECH/SUMMARY 默认开。
 
 ### 1.1 mock 分工（PM 已裁决 2026-11-01）
 
@@ -68,11 +68,11 @@ import {
 | `responseFormat` | `text \| json_object` | ✓ | roster/decision/insight 为 json |
 | `temperature` / `maxOutputTokens` | `number` | ✓ | 已按类型预设 |
 | `id` | `P-ROSTER` … | | 日志用 |
-| `version` | `"1.0.0"` | | 日志用，**不要写进事件 payload** |
+| `version` | `"2.0.0"`（ROSTER 仍 `1.0.0`） | | 日志用，**不要写进事件 payload**；与 `docs/prompts/runtime/` 文件名一一对应 |
 | `timeoutMs` | `number` | | 建议超时 |
 | `estimatedInputTokens` | `number` | | 预算核对用（≤3.5k） |
 | `includedMessageIds` | `string[]` | | QA_LLM_LOG.includedMessageIds |
-| `thinking` | `"disabled"` | | 传输层必须关闭 thinking（AR-10） |
+| `thinking` | `"enabled" \| "disabled"` | | 按 prompt 分配：SPEECH/SUMMARY 开，ROSTER/DECIDE/INSIGHT 关；全局 disabled 优先 |
 
 ---
 
@@ -307,8 +307,87 @@ appendEvent("message.completed", { message: { ... } });
 
 ---
 
-## 10. 变更记录
+## 10. 深度讨论改版（v2，2026-11-01）
+
+> 本节优先于前文冲突处（尤其 §5.2 决策、§5.5 总结、轮次口径）。
+
+### 10.1 轮次：不再是目标，只有"保底"和"上限"
+
+```ts
+coverageFloorFor(n) = min(12, 2 * n + 2)   // n=3→8, n=4→10, n=5→12, n=6→12
+MAX_TURNS = 36
+```
+
+- `plannedTurns` 字段**不再参与收束判定**，只作 UI 的"覆盖保底"提示；`planText` 已改成「覆盖保底 x / 安全上限 36」。
+- `turnIndex <= coverageFloor` 时 `canClose=false`，即使饱和也不许收。
+- `turnIndex >= 36` → `mustClose=true`（`closeReason="hard_cap"`），总结必须列出未解决争点。
+
+### 10.2 收束信号：`saturation.ready`（五项全满足）
+
+```ts
+interface Saturation {
+  ready: boolean;
+  reasons: string[];              // 未满足项，可直接进日志/prompt
+  openChallengeCount: number;     // 全部未回应挑战
+  blockingChallengeCount: number; // 最近 4 轮内、未承认的挑战（只有它阻塞收束）
+  acceptedUnresolved: string[];   // 允许带进总结的"仍未解决"
+  newClaimTurns: number;          // 最近 4 轮有新洞察的轮数
+  expertsSpokenTwice: number;
+  unresolvedTensions: number;     // 旧的未解决张力（不阻塞）
+  newTensionCount: number;        // 最近 4 轮新增张力（阻塞）
+  hostPressed: boolean;           // 主持人做过 probe 或 mediate
+}
+```
+
+1. 每位专家 ≥2 次；
+2. `blockingChallengeCount === 0`（**超窗口的旧挑战不阻塞**，进 `acceptedUnresolved`）；
+3. 最近 4 轮没有新洞察；
+4. 最近 4 轮没有**新增**张力（旧 divergence/open 允许保留）；
+5. 主持人已做过张力指认/追问。
+
+`mustClose = (turnIndex >= 36) || (canClose && saturation.ready)`。
+
+### 10.3 `action=close`
+
+- 模型可以输出 `action:"close"`，但只有 `eligibility.mustClose === true` 时才被接受（主持人 + `summary`）；
+- 否则 `sanitizeDecision` 记 `CLOSE_NOT_ALLOWED` 并把 action 改回 `next`；
+- 后端 runner 建议：只在 `mustClose` 时把这一轮交给主持人收尾，不要自己按轮数硬切。
+
+### 10.4 决策的新优先级
+
+`sanitizeDecision` 的兜底 `selectFallbackSpeaker` 已改为：**优先让"欠一个回答"的人接账**
+（`eligibility.prioritySpeakerIds`，权重 3.2），并返回 `reasonCode="answer_challenge"` + 指向挑战消息的
+`targetMessageId`。决策 prompt 里同样把这一条放在第 1 优先级。
+
+### 10.5 `turnFocus` 规则变严
+
+- 4–24 字，必须是**争点/问题**：以 `？` 结尾，或含 是否/该不该/到底/谁/为什么/怎么/能不能/A 还是 B；
+- 名词标签（"岗位结构"）会被改写为「立场轴？」并记 `FOCUS_INVALID`；
+- `decisionOutputSchema` 的 `turnFocus` 上限已从 20 改到 24。
+
+### 10.6 thinking 与超时
+
+| 项 | v2 |
+| --- | --- |
+| thinking | SPEECH/SUMMARY `enabled`；ROSTER/DECIDE/INSIGHT `disabled`；全局 `DEEPSEEK_THINKING=disabled` 优先 |
+| decision 超时 | 45s |
+| speech 超时 | 首 token 20s / 总 90s |
+| insight 超时 | 45s |
+| summary 超时 | 90s |
+| roster 超时 | 30s |
+
+公开状态只显示"思考中"：`reasoning_content` 仍必须在 adapter 层剥离，永不进入 `content`/事件/日志。
+
+### 10.7 总结
+
+`buildSummaryPrompt` 会把 `saturation.acceptedUnresolved` 注入为「仍未解决（第 3 段必须点到 1–2 条）」；
+到 36 轮硬收时额外要求说明"哪些问题没被解决"。模板兜底 `buildFallbackSummary` 不变。
+
+---
+
+## 11. 变更记录
 
 | 版本 | 日期 | 变更 |
 | --- | --- | --- |
 | v1.0 | 2026-11-01 | 对齐后端既有 `LLMClient`/`PromptSpec` 形状，五类 builder + parse + policy 全部可 import |
+| v2.0 | 2026-11-01 | 深度讨论改版：debateMap、saturation 收束、coverageFloor/36 上限、action=close、thinking + 新超时、turnFocus 争点化 |

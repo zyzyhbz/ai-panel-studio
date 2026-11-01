@@ -73,19 +73,21 @@ describe("assembleContext 预算", () => {
 });
 
 describe("planFor / phaseFor", () => {
-  it("第 1 轮是开场，接近计划轮次进入预收/收尾", () => {
+  it("第 1 轮是开场，到覆盖保底进入预收（是否收由饱和决定）", () => {
     expect(phaseFor(1, 12)).toBe("open");
     expect(phaseFor(4, 12)).toBe("expand");
     expect(phaseFor(8, 12)).toBe("clash");
     expect(phaseFor(11, 12)).toBe("preclose");
-    expect(phaseFor(12, 12)).toBe("close");
+    expect(phaseFor(12, 12)).toBe("preclose");
   });
 
-  it("plannedTurns=10 时第 10 轮必须收尾", () => {
-    const snapshot = makeSnapshot({ turnCount: 9, plannedTurns: 10, maxTurns: 12 });
+  it("计划轮次不再等于『必须收尾』", () => {
+    const snapshot = makeSnapshot({ turnCount: 9, plannedTurns: 10, maxTurns: 36 });
     const plan = planFor(snapshot);
     expect(plan.turnIndex).toBe(10);
-    expect(plan.mustClose).toBe(true);
+    expect(plan.mustClose).toBe(false);
+    expect(plan.phase).toBe("preclose");
+    expect(planFor(snapshot, true).mustClose).toBe(true);
   });
 });
 

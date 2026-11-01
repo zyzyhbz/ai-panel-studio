@@ -146,6 +146,8 @@ export const REASON_CODES = [
   "direct_clash",
   "fills_gap",
   "follow_up",
+  "answer_challenge",
+  "pressure_test",
   "closing",
 ] as const;
 
@@ -154,7 +156,7 @@ export type ReasonCode = (typeof REASON_CODES)[number];
 export interface TurnDecision {
   speakerId: string;
   intent: Intent;
-  /** 本轮关注点（对外字段 turnFocus），≤20 字名词短语 */
+  /** 本轮争点/问题（对外字段 turnFocus），允许以 ？ 结尾 */
   turnFocus: string;
   targetMessageId?: string;
   references?: string[];
@@ -173,10 +175,10 @@ export interface PublicTurn {
 }
 
 /**
- * 收尾原因。
- * 没有 early_stop：主持固定 4 席，8 轮就收会让主持占到 50%，数学上无法同时满足
- * 「主持 ≤1/3」与「每人至少发言 1 次」，所以收束点固定在 plannedTurns。
+ * 收尾原因（以观点饱和为准，轮数只是保底）：
+ * - `saturated`：过了覆盖保底，且饱和条件全满足（最近没有新观点、没有阻塞挑战等）；
+ * - `hard_cap`：到达安全上限 36，必须收，并在总结里列出未解决争点。
  */
-export type CloseReason = "hard_cap" | "planned_reached";
+export type CloseReason = "saturated" | "hard_cap";
 
 export type TurnPhase = "open" | "expand" | "clash" | "deepen" | "preclose" | "close";

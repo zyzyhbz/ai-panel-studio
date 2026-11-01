@@ -1,22 +1,19 @@
 import type { Intent, Polarity } from "@ai-panel/shared";
-import type {
-  CloseReason,
-  DiscussionSnapshot,
-  ExpertPersona,
-  TurnPhase,
-} from "../core/types";
-import { phaseFor } from "../context/assemble";
+import type { CloseReason, DiscussionSnapshot, ExpertPersona, TurnPhase } from "../core/types";
+import { MAX_TURNS, coverageFloorFor } from "../core/rounds";
+import { buildDebateMap, type DebateMap, type Saturation } from "../context/debate-map";
 
 /**
- * 准入集与义务（AR-03 的"守卫"部分）。
+ * 准入集、义务与收束判定（AR-03 的"守卫"部分）。
  *
- * 模型只能在 `allowedSpeakers` 里挑人；这里同时负责：
- * - 连续发言上限、单专家上限、主持配额；
- * - 覆盖义务（有人一次没说话时强制优先）；
- * - 收尾判定（hard cap / planned / early stop）。
+ * **收敛以观点为准，轮数只是保底**（PM 2026-11-01 纠正）：
+ * - `coverageFloor = min(12, 2n+2)`：这是"不能早于"的下限，不是目标；
+ * - `maxTurns = 36`：安全上限，到点必须收并列出未解决争点；
+ * - 主收束信号 = `debateMap.saturation.ready`（五项全满足），不受任何"计划轮次"影响。
  */
 
-export const HOST_TURN_LIMIT = 4;
+export const HOST_TURN_MIN = 4;
+export const HOST_TURN_MAX = 6;
 export const CONSECUTIVE_HARD_LIMIT = 2;
 export const EXPERT_CAP_EXTRA = 1;
 
@@ -45,14 +42,22 @@ export type ForcedReason = "opening" | "coverage" | "close";
 
 export interface Eligibility {
   turnIndex: number;
-  plannedTurns: number;
+  /** 覆盖保底（不能早于它收） */
+  coverageFloor: number;
   maxTurns: number;
   phase: TurnPhase;
+  /** 是否已过保底、允许收束 */
+  canClose: boolean;
+  /** 饱和 或 到硬上限（真的该收了） */
   mustClose: boolean;
   closeReason?: CloseReason;
+  saturation: Saturation;
   allowedSpeakers: AllowedSpeaker[];
   host: HostQuota;
   neverSpoken: string[];
+  /** 欠回答的人：未回应挑战的 target（按积压时间排序），供决策优先选人 */
+  prioritySpeakerIds: string[];
+  openChallengeCount: number;
   forcedSpeakerId?: string;
   forcedReason?: ForcedReason;
   /** 被剔除的候选与原因（只进日志，不进 prompt） */
@@ -64,6 +69,8 @@ export function buildEligibility(snapshot: DiscussionSnapshot): Eligibility {
   const host = snapshot.experts.find((e) => e.role === "host");
   const n = experts.length || snapshot.expertCount;
   const turnIndex = snapshot.turnCount + 1;
+  const maxTurns = Math.min(MAX_TURNS, snapshot.maxTurns || MAX_TURNS);
+  const coverageFloor = coverageFloorFor(n);
 
   const counts = new Map<string, number>();
   for (const message of snapshot.messages) {
@@ -72,27 +79,42 @@ export function buildEligibility(snapshot: DiscussionSnapshot): Eligibility {
   const neverSpoken = experts.filter((e) => !counts.get(e.id)).map((e) => e.id);
 
   const hostQuota = hostQuotaOf(snapshot, host);
-  const closeReason = evaluateClose(snapshot, turnIndex);
+  const debateMap = buildDebateMap(snapshot);
+  const saturation = debateMap.saturation;
+  const canClose = turnIndex > coverageFloor;
+  const closeReason = evaluateClose(turnIndex, maxTurns, canClose, saturation);
   const mustClose = closeReason !== undefined;
-  const phase = mustClose ? "close" : phaseFor(turnIndex, snapshot.plannedTurns);
+  const phase: TurnPhase = mustClose
+    ? "close"
+    : turnIndex <= 1
+      ? "open"
+      : turnIndex <= Math.ceil(coverageFloor * 0.45)
+        ? "expand"
+        : turnIndex <= coverageFloor
+          ? "clash"
+          : "deepen";
 
   const exempted: Array<{ id: string; reason: string }> = [];
-  const expertSlots = Math.max(1, snapshot.plannedTurns - hostQuota.used);
-  const expertCap = Math.ceil(expertSlots / Math.max(1, n)) + EXPERT_CAP_EXTRA;
+  const expertCap = Math.max(
+    4,
+    Math.ceil((maxTurns - hostQuota.limit) / Math.max(1, n)) + EXPERT_CAP_EXTRA,
+  );
 
   const lastSpeakerId = snapshot.messages.at(-1)?.expertId;
   const lastSpeakerConsecutive = lastSpeakerId ? consecutiveTail(snapshot, lastSpeakerId) : 0;
 
-  let candidates: AllowedSpeaker[] = experts.map((e) => ({
-    id: e.id,
-    name: e.name,
-    role: e.role,
-    speakCount: counts.get(e.id) ?? 0,
-    consecutiveCount: e.id === lastSpeakerId ? lastSpeakerConsecutive : 0,
-    lastIntent: lastIntentOf(snapshot, e.id),
-    polarity: e.polarity,
-    stanceAxis: e.stanceAxis,
-  }));
+  const buildCandidate = (expert: ExpertPersona): AllowedSpeaker => ({
+    id: expert.id,
+    name: expert.name,
+    role: expert.role,
+    speakCount: counts.get(expert.id) ?? 0,
+    consecutiveCount: expert.id === lastSpeakerId ? lastSpeakerConsecutive : 0,
+    lastIntent: lastIntentOf(snapshot, expert.id),
+    polarity: expert.polarity,
+    stanceAxis: expert.stanceAxis,
+  });
+
+  let candidates: AllowedSpeaker[] = experts.map(buildCandidate);
 
   candidates = candidates.filter((candidate) => {
     if (candidate.speakCount >= expertCap) {
@@ -106,24 +128,14 @@ export function buildEligibility(snapshot: DiscussionSnapshot): Eligibility {
     return true;
   });
 
-  // 全部被剔除时放宽连续限制（宁可重复，也不能空轮）
   if (candidates.length === 0) {
-    candidates = experts.map((e) => ({
-      id: e.id,
-      name: e.name,
-      role: e.role,
-      speakCount: counts.get(e.id) ?? 0,
-      consecutiveCount: e.id === lastSpeakerId ? lastSpeakerConsecutive : 0,
-      lastIntent: lastIntentOf(snapshot, e.id),
-      polarity: e.polarity,
-      stanceAxis: e.stanceAxis,
-    }));
+    candidates = experts.map(buildCandidate);
     exempted.push({ id: "*", reason: "候选集为空，放宽连续限制" });
   }
 
   // 收尾轮必须包含主持人：否则 forcedSpeaker 找不到人，会退回"全是专家"的候选集
   const hostAllowed = host
-    ? mustClose || shouldAllowHost(turnIndex, snapshot.plannedTurns, hostQuota, neverSpoken)
+    ? mustClose || shouldAllowHost(turnIndex, coverageFloor, hostQuota, neverSpoken)
     : false;
   if (host && hostAllowed) {
     candidates.push({
@@ -165,22 +177,29 @@ export function buildEligibility(snapshot: DiscussionSnapshot): Eligibility {
     const forced = candidates.find((c) => c.id === forcedSpeakerId);
     if (forced) allowed = [forced];
     else {
-      // 强制对象被剔除（例如已连续 2 次）：退回完整候选集，交给模型/兜底
       forcedSpeakerId = undefined;
       forcedReason = undefined;
     }
   }
 
+  const prioritySpeakerIds = debateMap.answerOwners.filter((id) =>
+    allowed.some((candidate) => candidate.id === id),
+  );
+
   return {
     turnIndex,
-    plannedTurns: snapshot.plannedTurns,
-    maxTurns: snapshot.maxTurns,
+    coverageFloor,
+    maxTurns,
     phase,
+    canClose,
     mustClose,
     closeReason,
+    saturation,
     allowedSpeakers: allowed,
     host: hostQuota,
     neverSpoken,
+    prioritySpeakerIds,
+    openChallengeCount: debateMap.openChallenges.length,
     forcedSpeakerId,
     forcedReason,
     exempted,
@@ -191,9 +210,10 @@ export function hostQuotaOf(
   snapshot: DiscussionSnapshot,
   host: ExpertPersona | undefined,
 ): HostQuota {
+  const limit = hostTurnLimit(snapshot.maxTurns || MAX_TURNS);
   const quota: HostQuota = {
     used: 0,
-    limit: HOST_TURN_LIMIT,
+    limit,
     openingDone: false,
     probeUsed: 0,
     mediateUsed: 0,
@@ -227,21 +247,24 @@ export function hostQuotaOf(
   return quota;
 }
 
+/** 主持席位随安全上限放大：36 轮给 6。 */
+export function hostTurnLimit(maxTurns: number): number {
+  return Math.max(HOST_TURN_MIN, Math.min(HOST_TURN_MAX, Math.round(maxTurns / 6)));
+}
+
 function shouldAllowHost(
   turnIndex: number,
-  plannedTurns: number,
+  coverageFloor: number,
   quota: HostQuota,
   neverSpoken: string[],
 ): boolean {
   if (quota.used >= quota.limit) return false;
   if (!quota.openingDone) return true;
-  if (quota.probeUsed === 0 && turnIndex <= Math.ceil(plannedTurns * 0.45)) return true;
-  if (quota.mediateUsed === 0 && turnIndex >= 3 && turnIndex <= Math.ceil(plannedTurns * 0.8)) {
-    return true;
-  }
-  if (quota.redirectUsed === 0 && neverSpoken.length > 0 && turnIndex <= Math.ceil(plannedTurns * 0.6)) {
-    return true;
-  }
+  if (quota.probeUsed === 0 && turnIndex <= Math.ceil(coverageFloor * 0.6)) return true;
+  if (quota.mediateUsed === 0 && turnIndex >= 3 && turnIndex <= coverageFloor + 4) return true;
+  if (quota.redirectUsed === 0 && neverSpoken.length > 0 && turnIndex <= coverageFloor) return true;
+  // 保底之后允许主持人再"施压"：还有积压张力时出手
+  if (quota.used < quota.limit - 1) return true;
   return false;
 }
 
@@ -264,20 +287,19 @@ function lastIntentOf(snapshot: DiscussionSnapshot, expertId: string): Intent | 
 
 /**
  * 收尾判定：
- * - hard_cap：超过硬上限（plannedTurns + 2），必须收；
- * - planned_reached：到达计划轮次（8–12，按专家数推出）。
+ * - `hard_cap`：到达安全上限（36），必须收；
+ * - `saturated`：过了覆盖保底、且饱和五项全满足，可以收。
  *
- * 为什么没有 early_stop：主持固定 4 席（开场/追问/串联/收尾），
- * 若在第 8 轮就收，主持占比会到 4/8 = 50%，且每位专家只有 1 次发言——
- * 数学上就不可能同时满足「主持 ≤1/3」和「每人 ≥1 次且不独角戏」。
- * 所以收束点固定为 plannedTurns（n=4 时正好 12，主持 33%）。
+ * **不看 plannedTurns**：轮数不是目标，只有保底与上限两个作用。
  */
 export function evaluateClose(
-  snapshot: DiscussionSnapshot,
   turnIndex: number,
+  maxTurns: number,
+  canClose: boolean,
+  saturation: Saturation,
 ): CloseReason | undefined {
-  if (turnIndex > snapshot.maxTurns) return "hard_cap";
-  if (turnIndex >= snapshot.plannedTurns) return "planned_reached";
+  if (turnIndex >= maxTurns) return "hard_cap";
+  if (canClose && saturation.ready) return "saturated";
   return undefined;
 }
 
@@ -299,6 +321,7 @@ export function preferredIntents(phase: TurnPhase, role: ExpertPersona["role"]):
       case "deepen":
         return ["probe", "mediate"];
       case "preclose":
+        return ["probe", "mediate"];
       case "close":
         return ["summary"];
       default:
@@ -311,8 +334,10 @@ export function preferredIntents(phase: TurnPhase, role: ExpertPersona["role"]):
     case "clash":
       return ["rebut", "clarify", "support"];
     case "deepen":
-      return ["extend", "clarify", "support"];
+      return ["clarify", "rebut", "extend"];
     default:
       return ["extend", "rebut", "support"];
   }
 }
+
+export type { DebateMap };

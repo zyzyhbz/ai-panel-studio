@@ -2,8 +2,10 @@
 
 - 实现：`packages/agent/src/prompts/roster.ts`（本文是同一文本的可读版）
 - 输出：JSON（`rosterOutputSchema`）→ `parseRosterOutput` → `normalizeRoster`
-- 参数：`deepseek-flash` / thinking off / `json_object` / temperature 0.9（修复重试 0.6）/ max 1200 tokens / 超时 20s
+- 参数：`deepseek-flash` / **thinking 开启**（v2 套件统一切到 enabled；文本未变，故版本仍为 1.0.0）/ `json_object` / temperature 0.9（修复重试 0.6）/ max 1200 tokens / 超时 **30s**
 - 对应：AR-01、FR-03；契约 §1.5（`stanceAxis/polarity/focusArea`）
+- 版本说明：本 prompt 的**文本**在深度讨论改版中没有改动（阵容生成与辩论协议无关），因此不升 2.0.0；
+  只有 thinking/超时跟随全局配置变化。`PROMPT_VERSIONS["P-ROSTER"]` 仍为 `1.0.0`。
 
 ## System
 
