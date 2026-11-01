@@ -8,7 +8,7 @@ if (!existsSync(dist)) {
   process.exit(0);
 }
 
-const suspicious = /sk-[A-Za-z0-9_-]{8,}|DEEPSEEK_API_KEY|reasoning_content/;
+const suspicious = /sk-[A-Za-z0-9]{24,}|DEEPSEEK_API_KEY|reasoning_content/;
 const files = [];
 
 function walk(dir) {

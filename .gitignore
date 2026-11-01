@@ -26,6 +26,8 @@ coverage/
 playwright-report/
 test-results/
 blob-report/
+e2e/.artifacts/
+apps/server/test-qa/
 
 # Logs
 *.log

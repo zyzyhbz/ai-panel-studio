@@ -41,12 +41,26 @@ const info = await page.evaluate(() => {
   for (const attr of ["data-status", "data-panel", "data-conn-state", "data-turn-count", "data-intent", "data-role"]) {
     dataAttrs[attr] = document.querySelectorAll(`[${attr}]`).length;
   }
+  // 三栏实测矩形：用于确认"并排"而不是"重叠成一列"
+  const rect = (sel) => {
+    const el = document.querySelector(sel);
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) };
+  };
+  const layout = {
+    rail: rect("[data-panel='rail'], .studio-rail"),
+    stage: rect("[data-panel='stage'], .studio-stage"),
+    insights: rect("[data-panel='insights'], .studio-insights"),
+    viewport: { w: window.innerWidth, h: window.innerHeight },
+  };
   return {
     title: document.title,
     url: location.href,
     rootText: (document.querySelector("#root")?.textContent ?? "").replace(/\s+/g, " ").trim().slice(0, 600),
     testidCounts: counts,
     dataAttrs,
+    layout,
     bodyScroll: {
       scrollHeight: document.scrollingElement?.scrollHeight ?? 0,
       clientHeight: document.scrollingElement?.clientHeight ?? 0,
