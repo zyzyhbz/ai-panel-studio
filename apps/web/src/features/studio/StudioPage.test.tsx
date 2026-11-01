@@ -198,4 +198,42 @@ describe("StudioPage after confirm (BUG-01)", () => {
     expect(screen.getByTestId("expert-rail")).toBeInTheDocument();
     expect(screen.queryByTestId("confirm-roster")).not.toBeInTheDocument();
   });
+
+  it("renders the rail, the transcript and the insights panel as siblings", async () => {
+    const user = userEvent.setup();
+    let call = 0;
+    mockedGet.mockImplementation(async () => {
+      call += 1;
+      return call === 1 ? readyDetail() : liveDetail();
+    });
+    mockedConfirm.mockResolvedValue({
+      discussion: { ...liveDetail().discussion, status: "live" },
+    });
+
+    const { container } = renderStudio();
+    await user.click(await screen.findByTestId("confirm-roster"));
+
+    await waitFor(() =>
+      expect(container.querySelector(".studio-shell")).not.toBeNull(),
+    );
+    const shell = container.querySelector(".studio-shell") as HTMLElement;
+
+    const rail = shell.querySelector(":scope > .studio-rail");
+    const stage = shell.querySelector(":scope > .studio-stage");
+    const insights = shell.querySelector(":scope > .studio-insights");
+
+    // All three must be direct grid children — nesting one inside another is
+    // what produced the "only the insight panel is visible" layout bug.
+    expect(rail).not.toBeNull();
+    expect(stage).not.toBeNull();
+    expect(insights).not.toBeNull();
+    expect(rail?.contains(stage as Node)).toBe(false);
+    expect(stage?.contains(insights as Node)).toBe(false);
+    expect(rail?.contains(insights as Node)).toBe(false);
+
+    // And each one owns its own scroll container.
+    expect(rail?.querySelector(".scroll-y")).not.toBeNull();
+    expect(stage?.querySelector(".scroll-y")).not.toBeNull();
+    expect(insights?.querySelector(".scroll-y")).not.toBeNull();
+  });
 });

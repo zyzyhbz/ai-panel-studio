@@ -137,7 +137,9 @@ describe("studio shell grid contract", () => {
     const baseLayer = blockOf(css, "@layer base {");
     expect(baseLayer).toMatch(/body\s*\{[^}]*overflow:\s*hidden/);
     expect(baseLayer).toMatch(/html,\s*body,\s*#root\s*\{[^}]*height:\s*100%/);
-    expect(base).toMatch(/\.scroll-y\s*\{[^}]*overflow-y:\s*auto/);
-    expect(base).toMatch(/min-height:\s*0/);
+    expect(baseLayer).toMatch(/\.scroll-y\s*\{[^}]*overflow-y:\s*auto/);
+    // Panels must be able to shrink, otherwise the inner scroller never gets
+    // a bounded height and the whole page scrolls instead.
+    expect(base).toMatch(/\.panel\s*\{[^}]*min-height:\s*0/);
   });
 });

@@ -31,7 +31,10 @@ describe("HomePage", () => {
     renderHome();
 
     expect(await screen.findByTestId("home-empty")).toBeInTheDocument();
-    expect(screen.getByText("发起第一场讨论")).toBeInTheDocument();
+    // QA queries `new-discussion` regardless of list/empty state.
+    expect(screen.getByTestId("new-discussion")).toHaveTextContent(
+      "发起第一场讨论",
+    );
     expect(
       screen.getByRole("button", { name: "AI 会不会让初级开发者失业？" }),
     ).toBeInTheDocument();
