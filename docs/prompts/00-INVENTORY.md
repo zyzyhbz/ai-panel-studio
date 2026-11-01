@@ -12,11 +12,12 @@
 docs/prompts/
 ├── 00-INVENTORY.md      # 本文件：索引 + 参数基线 + 版本规则
 ├── runtime/             # 生产运行时 prompt 全文（5 份 + README）
-│   ├── P-ROSTER.v1.0.0.md
-│   ├── P-DECIDE.v1.0.0.md
-│   ├── P-SPEECH.v1.0.0.md
-│   ├── P-INSIGHT.v1.0.0.md
-│   └── P-SUMMARY.v1.0.0.md
+│   ├── P-ROSTER.v1.1.0.md
+│   ├── P-DECIDE.v2.0.0.md
+│   ├── P-SPEECH.v2.0.0.md
+│   ├── P-INSIGHT.v2.0.0.md
+│   ├── P-SUMMARY.v2.0.0.md
+│   └── archive/         # 旧版本留档
 └── devlog/              # 开发过程 prompt（题目要求 ≥5 段，PM 汇编进 PROMPT-LOG）
     └── 01-g2-agent-package.md
 ```
@@ -42,7 +43,7 @@ docs/prompts/
 
 | # | ID | 名称 | 输出形态 | 调用时机 | 次数/场（n=4，最长 36 轮） | 对应需求 |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | `P-ROSTER@v1.0.0` | 阵容生成 | JSON | 创建/重生成 | 1（+≤2 修复） | AR-01、FR-03 |
+| 1 | `P-ROSTER@v1.1.0` | 阵容生成（按议题删题测试） | JSON | 创建/重生成 | 1（+≤2 修复） | AR-01、FR-03 |
 | 2 | `P-DECIDE@v2.0.0` | 发言决策 | JSON | 每轮开头 | ≤36 | AR-03、AR-05 |
 | 3 | `P-SPEECH@v2.0.0` | 专家发言 | 纯文本流式 | 每轮 | ≤30 | AR-02/04/06、FR-06/08 |
 | 3b | `P-SPEECH/host@v2.0.0` | 主持发言（同族变体） | 纯文本流式 | 开场/追问/串联/转向/收尾 | ≤6 | AR-02、FR-06/10 |
@@ -87,7 +88,7 @@ docs/prompts/
 
 ## 3. 五类输入 / 输出 / 校验
 
-### 3.1 `P-ROSTER@v1.0.0`
+### 3.1 `P-ROSTER@v1.1.0`
 
 | 项 | 内容 |
 | --- | --- |
@@ -295,7 +296,7 @@ validateSpeech(text: string, decision: TurnDecision, recent: Message[]): SpeechC
 
 | Prompt | 全文 | 落地要点 |
 | --- | --- | --- |
-| `P-ROSTER` | [runtime/P-ROSTER](runtime/P-ROSTER.v1.0.0.md) | 四维差异（轴/极性/维度/风格）写进"你必须做到"；颜色二选一（`colorKey` 或 hex）；禁用真实公众人物姓名 |
+| `P-ROSTER` | [runtime/P-ROSTER v1.1](runtime/P-ROSTER.v1.1.0.md) | 按议题做相关性/删题测试，拒绝通用角色凑数；四维差异 + 颜色 |
 | `P-INSIGHT` | [runtime/P-INSIGHT](runtime/P-INSIGHT.v1.0.0.md) | 重点写"什么时候不许写"：单人证据不许写共识、没写出轴不许写分歧、数字必须能在原文找到；空快照合法 |
 | `P-SUMMARY` | [runtime/P-SUMMARY](runtime/P-SUMMARY.v1.0.0.md) | 三段式、禁 JSON 痕迹、某类为空要明说、结尾给一句可带走的判断 |
 

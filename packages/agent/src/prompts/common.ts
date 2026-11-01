@@ -12,8 +12,8 @@ import { estimateTokens } from "../core/text";
  * 版本写进结构化日志，不写进事件 payload。
  */
 export const PROMPT_VERSIONS: Record<PromptId, string> = {
-  // 阵容生成文本未变，保持 1.0.0
-  "P-ROSTER": "1.0.0",
+  // 1.1：按议题做“删题测试”，拒绝通用角色凑数
+  "P-ROSTER": "1.1.0",
   // v2：按"谁欠谁一个回答"选人、turnFocus 争点化、action=close 接入饱和判定、thinking + 45s
   "P-DECIDE": "2.0.0",
   // v2：必须回应具体 messageId、四选一关系、必须新增、禁角色独白、thinking + 90s

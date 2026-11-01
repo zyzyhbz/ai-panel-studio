@@ -8,14 +8,14 @@
 
 | # | Prompt | 版本 | 输出 | 参数（temp/max/超时） | 对应需求 | 文档 |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | `P-ROSTER` | **1.0.0**（文本未变） | JSON | 0.9 / 1200 / 30s | AR-01、FR-03 | [P-ROSTER](P-ROSTER.v1.0.0.md) |
+| 1 | `P-ROSTER` | **1.1.0**（按议题删题测试） | JSON | 0.9 / 1200 / 30s | AR-01、FR-03 | [P-ROSTER v1.1](P-ROSTER.v1.1.0.md) |
 | 2 | `P-DECIDE` | **2.0.0** | JSON | 0.3 / 240 / 45s | AR-03、AR-05 | [P-DECIDE v2](P-DECIDE.v2.0.0.md) |
 | 3 | `P-SPEECH` | **2.0.0** | 纯文本流式 | 0.8 / 1200 / 首字 20s + 总 90s | AR-02、AR-04、AR-06 | [P-SPEECH v2](P-SPEECH.v2.0.0.md) |
 | 4 | `P-INSIGHT` | **2.0.0** | JSON | 0.2 / 900 / 45s | AR-07、FR-09 | [P-INSIGHT v2](P-INSIGHT.v2.0.0.md) |
 | 5 | `P-SUMMARY` | **2.0.0** | 纯文本三段 | 0.5 / 1400 / 90s | AR-08、FR-10 | [P-SUMMARY v2](P-SUMMARY.v2.0.0.md) |
 
 > 版本与代码常量 `PROMPT_VERSIONS`（`packages/agent/src/prompts/common.ts`）一一对应：
-> ROSTER=1.0.0，其余四项=2.0.0。**文档缺失/版本不一致视为 bug**（Prompt 记录必须与实现同步）。
+> ROSTER=1.1.0，其余四项=2.0.0。**文档缺失/版本不一致视为 bug**（Prompt 记录必须与实现同步）。
 
 ## v2 的三条结构性变化（比措辞重要）
 
