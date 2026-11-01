@@ -176,6 +176,7 @@ E2E 用本机 Chrome（`channel: "chrome"`），不下载 Playwright 浏览器�
 - 演播厅：圆桌席位、SSE 流式、专家五态、transcript、共识/分歧/待验证、总结
 - 回放：时间线、播放/暂停/1x/1.5x/2x/跳转，与直播共用 reducer
 - 返回大厅（直播中返回不结束会话）；三套配色（Atelier/Nocturne/Paper & Ink）
+- 对话归档/取消归档；首页独立「已归档」区，归档不影响讨论状态
 - 多讨论并行隔离；SQLite WAL + 事件投影；断线补发/去重
 - 真实 DeepSeek smoke（36 轮 / 0 degraded）；mock 5 议题 eval（19/19 门禁）
 

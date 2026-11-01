@@ -73,6 +73,7 @@ draft → generating → ready → live → summarizing → ended
 | POST | `/api/discussions/:id/roster/regenerate` | 重新生成阵容 |
 | POST | `/api/discussions/:id/confirm` | 确认阵容并开始 |
 | POST | `/api/discussions/:id/end` | 结束讨论并总结 |
+| POST | `/api/discussions/:id/archive` | 归档/取消归档（只改展示，不改状态） |
 | GET | `/api/discussions/:id/events` | 回放事件 |
 | GET | `/api/discussions/:id/stream` | SSE 实时流 |
 
@@ -103,6 +104,7 @@ draft → generating → ready → live → summarizing → ended
 | 参数 | 类型 | 默认 | 说明 |
 | --- | --- | --- | --- |
 | status | string | all | all/live/ended/failed |
+| archived | string | exclude | exclude/only/all |
 | limit | number | 50 | 1–100 |
 | offset | number | 0 | 分页 |
 
@@ -124,7 +126,8 @@ draft → generating → ready → live → summarizing → ended
       ],
       "summaryPreview": null,
       "updatedAt": "2026-11-01T10:00:00.000Z",
-      "lastSeq": 12
+      "lastSeq": 12,
+      "archivedAt": null
     }
   ],
   "total": 1
@@ -346,6 +349,26 @@ draft → generating → ready → live → summarizing → ended
 - `summarizing` / `ended` 幂等返回当前状态（200/202）。
 - `draft`/`generating`/`ready` 返回 `409 INVALID_STATE`。
 - 结束后不再产生新发言；正在流式输出的消息允许完成或中止，二者都必须落一条最终 `message.completed` 或标记丢弃，不能留下半条。
+
+### `POST /api/discussions/:id/archive`
+
+请求：
+
+```json
+{ "archived": true }
+```
+
+响应 `200`：
+
+```json
+{ "discussion": { "id": "d_01", "archivedAt": "2026-11-01T10:00:00.000Z" } }
+```
+
+规则：
+
+- 归档只影响首页展示，不改变 `status`、不中断直播、不删数据。
+- `archived=false` 取消归档；对同一状态幂等。
+- 首页默认请求 `archived=exclude`；归档区请求 `archived=only`；需要同时看两者时传 `all`。
 
 ---
 
