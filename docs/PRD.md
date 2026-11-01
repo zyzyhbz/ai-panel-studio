@@ -1,10 +1,10 @@
-# AI Panel Studio 产品需求文档（PRD）v0.1
+# AI Panel Studio 产品需求文档（PRD）v1.0
 
-- 日期：2026-10-31
-- 状态：G0 草案，待四角色评审后冻结
+- 日期：2026-10-31（2026-11-01 审计修订）
+- 状态：G1 已冻结，G2 执行中；本文已按作业要求逐条对照
 - Owner：产品经理
 - 截止：2026-11-02
-- 关联：[远程作业原文](00-远程作业原文.md)、[用户需求笔记](笔记.md)、[技术选型](01-技术选型.md)、[角色与协作 SOP](02-角色与协作SOP.md)、[G1 契约决议](06-G1契约决议.md)
+- 关联：[远程作业原文](00-远程作业原文.md)、[用户需求笔记](笔记.md)、[技术选型](01-技术选型.md)、[角色与协作 SOP](02-角色与协作SOP.md)、[G1 契约决议](06-G1契约决议.md)、[作业要求对照审计](07-PRD作业对照审计.md)
 
 > **v1.0 契约变更**：G1 裁决见 [06-G1契约决议](06-G1契约决议.md)。本文件与 06 冲突时，以 06 为准；G2 前会同步修订。
 
@@ -63,7 +63,7 @@ MVP 成功不是“功能列表全”，而是：
 
 - 首页讨论列表、创建讨论
 - 主持人 + 专家阵容生成、确认
-- 演播厅直播、自主发言、主持人开场/追问/收尾
+- 演播厅直播、自主发言、主持人开场/追问/串联/收尾
 - 专家状态小窗
 - 现场 transcript
 - 实时共识/分歧/待验证问题
@@ -95,6 +95,36 @@ MVP 成功不是“功能列表全”，而是：
 - 云端部署/横向扩展
 - 议题树/子议题
 - 联网搜索、工具调用、RAG
+
+### 2.3 交付与工程约束（作业规则）
+
+| 约束 | 本项目执行方式 |
+| --- | --- |
+| 任意 Vibe Coding 工具，从 0 到 1 | 使用 DeepSeek Harness + 多角色智能体；仓库从空目录建立，保留完整 Git 历史 |
+| 禁止“一键生成” | 先 PRD/契约，再四角色分阶段实现；Prompt 记录保留 SDD/DDD/TDD/E2E 过程 |
+| 数据库 SQLite | 后端使用 better-sqlite3 + WAL + SQL migration，不使用其他数据库 |
+| 前端/后端框架不限 | React + Vite / Fastify + TypeScript |
+| 原创性 | 代码、文档、Prompt 均在本仓库从零建立；不复制现成项目 |
+| 工具限制 | 主体开发由 Vibe Coding 智能体完成，不使用浏览器与 AI 聊天作为主体开发方式 |
+| 利用 AI 工具 | 使用多智能体、skills/MCP 思路、契约与 eval；不把“多开聊天窗口”当工程化 |
+| 生产级质感 | 不是功能堆叠：流式、回放、异常态、响应式、测试、可运行 README 都要成立 |
+
+### 2.4 用户诉求映射
+
+用户笔记的 8 点不是 8 个页面，落到以下能力：
+
+| 用户诉求 | 产品能力 | PRD 落点 |
+| --- | --- | --- |
+| 回答快 | 流式输出、短发言、低等待 | NFR-01、AR-04、FR-06 |
+| 观点全 | 立场/维度覆盖、主持人补位、盲区提示 | AR-01、AR-02、FR-03 |
+| 结构化可视化 | 共识/分歧/待验证、时间线、专家状态 | FR-07、FR-09、§9 |
+| 可随时录制、回放 | 语义事件自动记录、时间线回放 | FR-11、§10.3 |
+| 上下文及时共通 | 每轮读最新 transcript + 摘要，会话隔离 | AR-05、FR-12 |
+| 快速碰撞 | 自主抢答/补充/反驳，不机械轮转 | AR-03、FR-06 |
+| 过程透明 | 公开状态/关注点/意图，不暴露隐藏 CoT | FR-07、AR-06 |
+| 议题管理 | 多讨论并行、进度/结论/隔离 | FR-01、FR-12 |
+
+> “可随时录制”在本项目中定义为**自动记录语义事件并可随时回放**，不是视频录制；视频/音频导出为 P2 非目标。
 
 ---
 
@@ -140,30 +170,31 @@ MVP 成功不是“功能列表全”，而是：
 ### 4.2 状态机
 
 ```text
-draft → generating → ready → live → summarizing → ended
+generating → ready → live → summarizing → ended
                          ↘ failed
 ```
 
-- `draft`：已创建，未生成阵容
 - `generating`：正在生成主持人与专家
 - `ready`：阵容已生成，等待用户确认
 - `live`：讨论进行中
 - `summarizing`：主持人正在总结
 - `ended`：已结束，可回放
-- `failed`：生成/运行失败，可重试
+- `failed`：生成/运行失败；有发言时可结束并回放，无发言时可重新生成
+
+> 不对外暴露 `draft`；创建接口直接进入 `generating`。
 
 ### 4.3 数据实体（逻辑）
 
 | 实体 | 关键字段 |
 | --- | --- |
-| Discussion | id, topic, status, expert_count, turn_count, created_at, updated_at, ended_at, summary |
-| Expert | id, discussion_id, role(host/expert), name, profession, title, stance, color, focus, sort_order |
-| Message | id, discussion_id, expert_id, content, intent, turn_index, created_at |
-| Insight | id, discussion_id, type(consensus/divergence/open_question), content, evidence_message_ids, updated_at |
+| Discussion | id, topic, status, expert_count, turn_count, planned_turns, max_turns, last_seq, error, created_at, updated_at, ended_at |
+| Expert | id, discussion_id, role(host/expert), name, profession, title, stance, stance_axis, polarity, focus_area, color, sort_order |
+| Message | id, discussion_id, expert_id, content, char_count, intent, target_message_id, references_json, degraded, turn_index, created_at |
+| Insight | id, discussion_id, type(consensus/divergence/open_question), content, first_seen_turn, evidence_message_ids, updated_at |
 | Event | id, discussion_id, seq, type, payload_json, created_at |
-| Summary | discussion_id, content, created_at |
+| Summary | discussion_id, content, is_fallback, created_at |
 
-> 事件是事实源；`Message` / `Insight` / `Summary` 是可重建的投影。具体 schema 以后端 ER 图为准。
+> 事件是事实源；`Message` / `Insight` / `Summary` 是可重建的投影。具体 schema 以 [ER 图](ER.md) 与 [G1 契约决议](06-G1契约决议.md) 为准。
 
 ---
 
@@ -225,9 +256,9 @@ draft → generating → ready → live → summarizing → ended
 | ID | 需求 | 验收标准 |
 | --- | --- | --- |
 | FR-01 | 首页展示讨论列表 | 卡片含议题、状态、专家数、进度、更新时间、结论摘要（已结束）；点击进行中进直播，已结束进回放；空态有创建入口 |
-| FR-02 | 创建讨论 | 议题必填 2–200 字；专家人数 3–6，默认 4；提交后进入 generating；重复提交被阻止；失败可重试 |
-| FR-03 | 生成阵容 | 1 位主持人 + N 位专家；每人有姓名、职业、Title、立场、`stanceAxis`、`polarity`、专属颜色；颜色不重复；姓名/人设不重复；至少 3 种不同立场 |
-| FR-04 | 阵容确认 | 用户可确认或重新生成；确认后进入 live；重复确认不重复启动；返回首页后草稿仍可继续 |
+| FR-02 | 创建讨论 | 议题必填 2–200 字；专家人数 3–6，默认 4；`clientRequestId` 幂等；提交后进入 generating；重复提交返回同一讨论；失败可重试且保留 discussionId |
+| FR-03 | 生成阵容 | 1 位主持人 + N 位专家；每人有姓名、职业、Title、立场、`stanceAxis`、`polarity`、`focusArea`、专属颜色；颜色不重复；姓名/人设不重复；至少 3 种不同立场 |
+| FR-04 | 阵容确认 | 用户可确认或重新生成；确认后进入 live；重复确认不重复启动；返回首页后未确认的阵容仍可继续 |
 | FR-05 | 演播厅布局 | 桌面含议题栏、专家栏、transcript、共识/分歧栏；区域独立滚动；页面本身不滚动；三档屏宽合理 |
 | FR-06 | 自主发言 | 主持人开场；专家根据当前 transcript 自主决定发言顺序；不出现固定轮转；每人每次 1–2 句；`plannedTurns` 8–12，`maxTurns` 不超过 14 |
 | FR-07 | 专家状态 | 每位专家显示 idle/preparing/speaking；显示当前关注点或公开思考摘要；不显示隐藏 CoT |
@@ -237,7 +268,7 @@ draft → generating → ready → live → summarizing → ended
 | FR-11 | 回放 | 支持播放/暂停/1x/1.5x/2x/跳转；刷新/重启后仍可回放；回放不调用 LLM；直播与回放内容一致 |
 | FR-12 | 多讨论并行 | 同时运行至少 2 个讨论；事件流、transcript、共识、结论互不串线；首页在 visible 时每 5s 轮询，状态独立更新 |
 | FR-13 | 结束/离开 | 用户可主动结束；结束后进入 summarizing/ended；失败且有发言的讨论也可结束并回放；离开页面不取消后台讨论；结束后不可继续发言 |
-| FR-14 | 样例数据 | 数据库初始化脚本 + 至少 5 条高质量样例（预设议题 + 对应阵容）；至少 1 条含完整 transcript/共识/总结，可直接回放 |
+| FR-14 | 样例数据 | 数据库初始化脚本 + 至少 5 条高质量样例（预设议题 + 对应 1 主持 + 4 专家阵容）；覆盖 5 种状态；字段非空、颜色唯一、立场 ≥3 类；至少 1 条含 ≥8 轮 transcript + ≥2 条洞察 + 总结，可直接回放 |
 | FR-15 | 异常与空态 | 生成失败、LLM 超时、SSE 断线、空列表、无共识均有可读状态；`discussion.failed` 可见；总结失败允许 `summary=null` 的 ended；不显示原始堆栈/JSON；SSE 自动重连 |
 | FR-16 | Key 安全 | API Key 只在服务端环境变量；前端 bundle/网络响应/日志均不出现 Key |
 | FR-17 | 一键运行 | Windows 下按 README 可完成安装、迁移、种子、启动；提供 `.env.example` |
@@ -250,10 +281,10 @@ draft → generating → ready → live → summarizing → ended
 | --- | --- | --- |
 | AR-01 | 人设多样性 | 专家在职业、立场、关注点上互补；主持中立；不出现 4 个同质化“专家” |
 | AR-02 | 主持人职责 | 开场点题；至少 1 次追问；至少 1 次串联不同专家；结尾总结；不长期霸占发言 |
-| AR-03 | 发言调度 | 基于当前 transcript 决定下一位；意图为 opening/probe/rebut/support/extend/clarify/mediate/redirect/summary；用 `references` 表达串联；禁止固定顺序轮转；同一专家不连续超过 2 次 |
+| AR-03 | 发言调度 | 基于当前 transcript 决定下一位；意图为 opening/probe/rebut/support/extend/clarify/mediate/redirect/summary；用 `references` 表达串联；禁止固定顺序轮转；同一专家不连续超过 2 次；举手/抢答是行为效果，不作为 transcript 内部事件 |
 | AR-04 | 发言长度 | 每次 1–2 句；单条不超过约 120 个中文字符；不写成小作文 |
-| AR-05 | 上下文工程 | 每次发言使用最新 transcript 窗口 + 结构化摘要 + 当前共识/分歧；只读本会话；不跨会话 |
-| AR-06 | 公开透明 | 对外只暴露状态、关注点、发言意图等公开字段；不展示 `reasoning_content`/隐藏 CoT |
+| AR-05 | 上下文工程 | 每次发言使用最新 transcript 窗口 + 结构化摘要 + 当前共识/分歧 + persona + 轮次计划；只读本会话；不跨会话 |
+| AR-06 | 公开透明 | 对外只暴露状态、`focusArea`/`turnFocus`、发言意图等公开字段；不展示 `reasoning_content`/隐藏 CoT；transcript 不显示“举手”等内部事件 |
 | AR-07 | 共识依据 | 每条共识/分歧至少关联 1 条发言；没有明确依据时放入“待验证”，不编造 |
 | AR-08 | 总结质量 | 自然语言；覆盖共识、分歧、未决问题；不出现 JSON 字段名/原始结构 |
 | AR-09 | 失败降级 | 超时/无效 JSON/空输出时有兜底：重试一次、跳过该轮或使用安全文案；不卡死、不白屏 |
@@ -270,12 +301,12 @@ draft → generating → ready → live → summarizing → ended
 | NFR-02 | 实时 | SSE 推送；共识/分歧至少每 2 轮提炼一次，更新在完成后 2s 内到达；断线 3s 内自动重连并补发 |
 | NFR-03 | 并发隔离 | mock LLM 下 5 个会话/20 个 SSE 连接；无串流、无串数据；p95 事件延迟 < 500ms |
 | NFR-04 | 持久化 | SQLite WAL；事件/消息/洞察/总结落库；进程重启后可恢复/回放 |
-| NFR-05 | 响应式 | ≥1440 超宽、1024–1439 桌面、768–1023 平板、<768 窄屏；各区域独立滚动；页面不整体滚动 |
+| NFR-05 | 响应式 | 中文 UI；≥1440 超宽、1024–1439 桌面、768–1023 平板、<768 窄屏；各区域独立滚动；页面不整体滚动 |
 | NFR-06 | 安全 | Key 仅服务端；输入按纯文本接受、长度限制；前端渲染转义（禁止 innerHTML）；日志脱敏；不展示原始 JSON/CoT/堆栈 |
 | NFR-07 | 可测试 | mock LLM 可切换；核心逻辑可单测；E2E 不依赖真实模型；测试可重复 |
 | NFR-08 | 成本 | 单场 < ¥1；开发期总调用成本远低于 ¥10 |
 | NFR-09 | 可观测 | 结构化日志；request/session ID；关键阶段耗时；不记录 Key/完整 prompt 中的敏感信息 |
-| NFR-10 | 可运行 | Windows 下 Node 脚本；一条命令启动；README 含环境变量、迁移、种子、测试 |
+| NFR-10 | 可运行 | 本地运行、前后端分离；Windows 下 Node 脚本；一条命令启动；README 含环境变量、迁移、种子、测试 |
 | NFR-11 | 可访问性 | 键盘可操作；对比度达标；`prefers-reduced-motion` 降级；颜色不是唯一信息载体 |
 
 ---
@@ -349,6 +380,7 @@ draft → generating → ready → live → summarizing → ended
 GET    /api/discussions
 POST   /api/discussions
 GET    /api/discussions/:id
+GET    /api/discussions/:id/state
 POST   /api/discussions/:id/roster/regenerate
 POST   /api/discussions/:id/confirm
 POST   /api/discussions/:id/end
@@ -362,10 +394,12 @@ GET    /api/health
 ### 10.3 事件原则
 
 - 每个会话独立 `seq`，从 1 递增。
-- 事件不可变；投影可重建。
+- 事件不可变；投影可重建；`events.payload_json` 就是 SSE `data` 对象。
 - 直播发送 token delta；落库只存完整消息等语义事件。
+- 每个 `turn.started` 必须有 `message.completed` 或 `turn.aborted`。
+- 每个会话必须有终态：`discussion.ended` 或 `discussion.failed`。
 - 回放按 `seq` 重放；不调用 LLM。
-- SSE 支持 `Last-Event-ID` 补发。
+- SSE 支持 `Last-Event-ID` 补发与 `stream.caught_up`。
 
 ### 10.4 关键约束
 
@@ -402,27 +436,85 @@ GET    /api/health
 
 ### 11.3 质量门禁
 
+- 核心逻辑（嘉宾生成、发言调度、共识提炼）先写测试再实现，TDD 用例可追溯
 - 单元/组件/接口测试通过
-- E2E 主链路通过
+- E2E 主链路通过（含断线、多会话、回放一致性）
 - 5 会话/20 SSE 压力测试通过
 - 无 P0/P1 缺陷
 - Key 扫描通过
 - README 按步骤可复现
 
+### 11.4 开发范式映射
+
+| 阶段 | 本项目落点 | 验收证据 |
+| --- | --- | --- |
+| SDD：数据建模与 API 契约 | `PRD.md`、`ER.md`、`03-API契约.md`、`04-SSE事件契约.md` | 字段/状态/错误码评审通过 |
+| DDD：前端组件与页面 | `FRONTEND-PLAN.md`、`apps/web` | 三档布局、组件测试、截图 |
+| TDD：核心逻辑测试先行 | 嘉宾生成、发言调度、共识提炼 | 先失败测试、再实现，测试通过 |
+| E2E：系统端到端 | `e2e/`、主链路/断线/多会话/回放 | Playwright 报告 |
+| Agent 行为/上下文 | `AGENT-BEHAVIOR.md`、`packages/agent`、`evals/` | 5 议题 eval 报告 |
+
+> 题目里的 DDD 指“前端组件与页面生成”，不是领域驱动设计；领域模型归 SDD。
+
 ---
 
-## 12. 交付物映射
+## 12. 交付物与提交要求
+
+> 题目明确：缺任意一项视为不合格。以下逐项对应，交付前用 [交付清单](05-交付清单.md) 打勾。
+
+### 12.1 完整项目源码
+
+- GitHub/Gitee 链接，独立仓库，不嵌套在别的项目里。
+- 代码：`apps/web`、`apps/server`、`packages/shared`、`packages/agent`。
+- 数据库初始化脚本：migration + seed，至少 5 条高质量样例（议题 + 主持/专家阵容）。
+- 开发文档：PRD、ER 图、API 文档，均为 `.md`；ER 图用 Mermaid。
+- API 文档：REST 端点、SSE 事件、错误码、示例。
+- 测试代码：Vitest 单测/组件/接口、Playwright E2E、压测/安全扫描。
+- README：运行指南、环境变量配置、技术选型说明、主要 API 列表、已完成能力、后续改进方向。
+- Git 提交历史：按 `docs → schema → api → ui → tests → fix` 分层，不出现“一次性大提交”。
+
+### 12.2 核心 Prompt 记录（≥5 段）
+
+- 记录真正引导 AI 开发的核心原始 Prompt，不是事后总结。
+- 至少覆盖四个阶段，并明确标注：
+  1. 【SDD 阶段】数据建模与 API 契约生成
+  2. 【DDD 阶段】前端组件与页面生成
+  3. 【TDD 阶段】核心逻辑的测试用例编写与业务实现
+  4. 【E2E 阶段】系统级端到端测试与质量闭环
+- 第 5 段可为 Agent 行为/上下文工程或集成修复。
+- 每段后附 1–2 句：当时意图、遇到的挑战、如何引导 AI 修正。
+- 产出：`docs/PROMPT-LOG.md` + `docs/prompts/devlog/`。
+
+### 12.3 开发过程思路 & 工作流说明（1–1.5 页）
+
+- 开发流程：PM → 契约 → 四角色并行 → 集成 → TDD/E2E → 交付。
+- 说明实际工具链；题目问的是 Claude Code + DeepSeek V4 Pro，本次实际使用 DeepSeek Harness + deepseek-flash，需如实说明并给出等价映射。
+- 记录 2–3 个与 AI 协同的真实问题及解决路径。
+- 谈“工程化 AI 开发”的理解：拆解、契约、上下文、eval、测试、可观测、可回滚。
+- 产出：`docs/WORKFLOW.md`。
+
+### 12.4 提交方式
+
+- 邮箱：`xulei@wisquest.com`
+- 主题：【远程作业提交】姓名
+- 附件/链接：zip 包 + 文档（Prompt 记录 + 工作流说明）+ GitHub/Gitee 邀请
+- 截止：收到后 72 小时；本项目内部按 **2026-11-02 17:00 提交**，留 1 小时缓冲。
+- 人民币 10 元工具额度：开发期 API/工具成本控制在额度内，面试通过后按公司流程报销。
+
+### 12.5 交付物映射
 
 | 题目要求 | 本项目的产出 |
 | --- | --- |
-| 完整源码 / Git 链接 | `apps/`、`packages/`、`e2e/`、独立 Git 仓库 |
+| 完整源码 / GitHub/Gitee 链接 | `apps/`、`packages/`、`e2e/`、独立 Git 仓库 |
 | 数据库初始化 + 5 条样例 | `scripts/db/`、migration、seed |
-| 开发文档（PRD/ER/API） | 本文件、ER 图、`03-API契约.md` |
-| 测试代码 | Vitest、Fastify inject、Playwright、压力脚本 |
-| README | 运行指南、环境变量、API 列表、能力与改进 |
-| Prompt 记录（≥5 段） | `docs/prompts/` + `docs/PROMPT-LOG.md` |
-| 工作流说明（1–1.5 页） | `docs/WORKFLOW.md` |
+| 开发文档（PRD/ER/API，md + Mermaid） | `PRD.md`、`ER.md`、`03-API契约.md` |
+| API 文档 | `03-API契约.md`、`04-SSE事件契约.md` |
+| 测试代码 | Vitest、Fastify inject、Playwright、压力/安全脚本 |
+| README | 运行指南、环境变量、技术选型、API 列表、能力与改进 |
+| Prompt 记录（≥5 段） | `docs/prompts/devlog/` + `PROMPT-LOG.md` |
+| 工作流说明（1–1.5 页） | `WORKFLOW.md` |
 | Git 历史 | docs → schema → api → ui → tests → fix |
+| 提交邮件 | 按 §12.4 执行 |
 
 ---
 
@@ -451,15 +543,21 @@ GET    /api/health
 
 | 题目/笔记 | 本 PRD |
 | --- | --- |
-| 1.1 产品定位 | §1 产品定义 |
+| 1.1 产品定位 | §1 产品定义、§2.1 |
 | 1.2 目标用户 | §3 用户与场景 |
 | 1.3 痛点 | §1.3、§2.1、AR-03/05/07 |
 | 1.4 功能要求 | FR-01 ~ FR-17 |
-| 技术要求 | NFR-01 ~ NFR-11、§10 |
-| 核心考察点 | AR-01 ~ AR-11、§11 |
-| 重要规则 | §2.2 非目标、技术选型 |
-| 交付物要求 | §12 |
-| 用户笔记：快/全/结构化/回放/上下文/透明/多议题 | §1.2、§2.1、FR-06/09/11/12、AR-03/05/06 |
+| 1.4 技术要求 | NFR-01 ~ NFR-11、§10 |
+| 1.4 核心考察点 | §11.4、AR-01 ~ AR-11、§9 |
+| 2 重要规则 | §2.3 |
+| 3.1 完整源码/文档/测试/README/Git | §12.1、§12.5 |
+| 3.2 Prompt 记录 ≥5 段 | §12.2 |
+| 3.3 工作流说明 1–1.5 页 | §12.3 |
+| 4 提交方式 | §12.4 |
+| 5 提醒/10 元额度 | §12.4、§1.4 |
+| 用户笔记：快/全/结构化/回放/上下文/透明/多议题 | §2.4、§1.2、FR-06/09/11/12、AR-03/05/06 |
+
+> 逐条原子化对照与“已覆盖/需补强/缺口”状态见 [作业要求对照审计](07-PRD作业对照审计.md)。
 
 ---
 
@@ -468,3 +566,4 @@ GET    /api/health
 | 版本 | 日期 | 变更 |
 | --- | --- | --- |
 | v0.1 | 2026-10-31 | 首版，待四角色评审 |
+| v1.0 | 2026-11-01 | 按作业要求逐条审计：补 §2.3 工程规则、§2.4 用户诉求映射、§11.4 范式映射、§12 完整交付/提交要求；同步契约 v1.0 字段与状态 |
