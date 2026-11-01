@@ -1,0 +1,24 @@
+{
+  "$schema": "qa/llm-fixture@1",
+  "negative": true,
+  "expectNotes": [
+    "第 3 次必须被守卫拒绝并换人"
+  ],
+  "onExhausted": "last",
+  "name": "decision/same-speaker-x3",
+  "kind": "decision",
+  "scenario": "normal",
+  "description": "同一专家连续 3 次（负例，违反 AR-03）",
+  "expectOutcome": "abort_turn",
+  "steps": [
+    {
+      "content": "{\"speakerId\":\"e_01\",\"intent\":\"extend\",\"turnFocus\":\"垄断发言\",\"messageId\":\"m_01\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_01\",\"intent\":\"extend\",\"turnFocus\":\"垄断发言\",\"messageId\":\"m_02\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_01\",\"intent\":\"extend\",\"turnFocus\":\"垄断发言\",\"messageId\":\"m_03\"}"
+    }
+  ]
+}

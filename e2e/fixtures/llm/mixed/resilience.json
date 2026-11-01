@@ -1,0 +1,56 @@
+{
+  "$schema": "qa/mixed-plan@1",
+  "name": "mixed/resilience",
+  "description": "单场混合故障：仍须走到 ended，且有效发言 >=6 条",
+  "timeline": [
+    {
+      "turn": 2,
+      "kind": "speech",
+      "fixture": "llm/speech/slow.json",
+      "expected": "正常但慢"
+    },
+    {
+      "turn": 3,
+      "kind": "speech",
+      "fixture": "llm/speech/empty.json",
+      "expected": "turn.aborted(empty_output)"
+    },
+    {
+      "turn": 4,
+      "kind": "decision",
+      "fixture": "llm/decision/invalid-speaker.json",
+      "expected": "重选 speaker"
+    },
+    {
+      "turn": 5,
+      "kind": "speech",
+      "fixture": "llm/speech/long.json",
+      "expected": "截断 + degraded"
+    },
+    {
+      "turn": 6,
+      "kind": "speech",
+      "fixture": "llm/speech/duplicate.json",
+      "expected": "去重"
+    },
+    {
+      "turn": 8,
+      "kind": "consensus",
+      "fixture": "llm/consensus/unsupported.json",
+      "expected": "降级为 open_question"
+    },
+    {
+      "turn": "end",
+      "kind": "summary",
+      "fixture": "llm/summary/normal.json",
+      "expected": "正常总结"
+    }
+  ],
+  "assertions": [
+    "最终 status=ended",
+    "message.completed 有效条数 >= 6",
+    "每个 turn.started 都有 message.completed 或 turn.aborted",
+    "summary 非空",
+    "页面无未捕获异常"
+  ]
+}

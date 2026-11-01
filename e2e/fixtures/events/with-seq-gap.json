@@ -1,0 +1,765 @@
+{
+  "$schema": "qa/events@1",
+  "name": "with-seq-gap",
+  "discussionId": "d_qa_main",
+  "description": "缺失 seq=7（模拟丢帧），供补拉逻辑识别",
+  "events": [
+    {
+      "id": "evt_01",
+      "seq": 1,
+      "type": "roster.ready",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "experts": [
+          {
+            "id": "e_host",
+            "role": "host",
+            "name": "林致远",
+            "profession": "科技主持人",
+            "title": "资深圆桌主持",
+            "stance": "中立，负责开场、追问、串联与收尾",
+            "stanceAxis": "岗位替代 vs 岗位重构",
+            "polarity": "neutral",
+            "color": "#E5E7EB",
+            "focusArea": "节奏与议题边界",
+            "sortOrder": 0
+          },
+          {
+            "id": "e_01",
+            "role": "expert",
+            "name": "周明",
+            "profession": "软件工程师",
+            "title": "技术负责人",
+            "stance": "AI 会重构初级岗位，而不是简单消灭",
+            "stanceAxis": "岗位替代 vs 岗位重构",
+            "polarity": "oppose",
+            "color": "#3E6FD9",
+            "focusArea": "工程实践与岗位结构",
+            "sortOrder": 1
+          },
+          {
+            "id": "e_02",
+            "role": "expert",
+            "name": "许澜",
+            "profession": "组织心理学研究者",
+            "title": "副教授",
+            "stance": "岗位会被重组，但入行门槛会明显抬高",
+            "stanceAxis": "岗位替代 vs 岗位重构",
+            "polarity": "neutral",
+            "color": "#2F8F8A",
+            "focusArea": "组织行为与新人成长",
+            "sortOrder": 2
+          },
+          {
+            "id": "e_03",
+            "role": "expert",
+            "name": "陈默",
+            "profession": "劳动经济学家",
+            "title": "研究员",
+            "stance": "AI 先替代任务，再压缩初级岗位数量",
+            "stanceAxis": "岗位替代 vs 岗位重构",
+            "polarity": "support",
+            "color": "#C2673F",
+            "focusArea": "就业结构与技能溢价",
+            "sortOrder": 3
+          },
+          {
+            "id": "e_04",
+            "role": "expert",
+            "name": "苏芮",
+            "profession": "创业公司 CTO",
+            "title": "技术合伙人",
+            "stance": "两年内初级招聘会明显收缩",
+            "stanceAxis": "岗位替代 vs 岗位重构",
+            "polarity": "strong_support",
+            "color": "#7A8CA8",
+            "focusArea": "团队成本与招聘节奏",
+            "sortOrder": 4
+          }
+        ]
+      },
+      "createdAt": "2026-11-01T10:00:01.000Z"
+    },
+    {
+      "id": "evt_02",
+      "seq": 2,
+      "type": "discussion.started",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "startedAt": "2026-11-01T10:00:02.000Z"
+      },
+      "createdAt": "2026-11-01T10:00:02.000Z"
+    },
+    {
+      "id": "evt_03",
+      "seq": 3,
+      "type": "turn.started",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "turnIndex": 1,
+        "speakerId": "e_host",
+        "speakerName": "林致远",
+        "intent": "opening",
+        "turnFocus": "节奏与议题边界·第1轮",
+        "messageId": "m_01",
+        "references": []
+      },
+      "createdAt": "2026-11-01T10:00:20.000Z"
+    },
+    {
+      "id": "evt_04",
+      "seq": 4,
+      "type": "message.completed",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "message": {
+          "id": "m_01",
+          "expertId": "e_host",
+          "speakerName": "林致远",
+          "speakerTitle": "资深圆桌主持",
+          "speakerColor": "#E5E7EB",
+          "content": "补一个角度：企业愿不愿意为再培训买单，决定了岗位是升级还是压缩。",
+          "intent": "opening",
+          "turnIndex": 1,
+          "charCount": 32,
+          "degraded": false,
+          "references": [],
+          "createdAt": "2026-11-01T10:00:24.000Z"
+        }
+      },
+      "createdAt": "2026-11-01T10:00:24.000Z"
+    },
+    {
+      "id": "evt_05",
+      "seq": 5,
+      "type": "turn.started",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "turnIndex": 2,
+        "speakerId": "e_04",
+        "speakerName": "苏芮",
+        "intent": "support",
+        "turnFocus": "团队成本与招聘节奏·第2轮",
+        "messageId": "m_02",
+        "references": []
+      },
+      "createdAt": "2026-11-01T10:00:30.000Z"
+    },
+    {
+      "id": "evt_06",
+      "seq": 6,
+      "type": "message.completed",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "message": {
+          "id": "m_02",
+          "expertId": "e_04",
+          "speakerName": "苏芮",
+          "speakerTitle": "技术合伙人",
+          "speakerColor": "#7A8CA8",
+          "content": "这件事短期看成本，长期看的是组织能力能不能跟上。",
+          "intent": "support",
+          "turnIndex": 2,
+          "charCount": 24,
+          "degraded": false,
+          "references": [],
+          "createdAt": "2026-11-01T10:00:34.000Z"
+        }
+      },
+      "createdAt": "2026-11-01T10:00:34.000Z"
+    },
+    {
+      "id": "evt_08",
+      "seq": 8,
+      "type": "message.completed",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "message": {
+          "id": "m_03",
+          "expertId": "e_03",
+          "speakerName": "陈默",
+          "speakerTitle": "研究员",
+          "speakerColor": "#C2673F",
+          "content": "我同意一半。方向没错，但把责任全推给个人，忽略了过去三年的招聘结构变化。",
+          "intent": "clarify",
+          "turnIndex": 3,
+          "charCount": 36,
+          "degraded": false,
+          "targetMessageId": "m_02",
+          "references": [],
+          "createdAt": "2026-11-01T10:00:44.000Z"
+        }
+      },
+      "createdAt": "2026-11-01T10:00:44.000Z"
+    },
+    {
+      "id": "evt_09",
+      "seq": 9,
+      "type": "insight.updated",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "insights": [
+          {
+            "id": "i_01",
+            "type": "consensus",
+            "content": "双方都认为初级岗位的职责会变化，而不是原样保留",
+            "evidenceMessageIds": [
+              "m_02",
+              "m_03"
+            ],
+            "firstSeenTurn": 3,
+            "updatedAt": "2026-11-01T10:00:45.000Z"
+          },
+          {
+            "id": "i_02",
+            "type": "divergence",
+            "content": "变化是升级还是压缩，存在分歧",
+            "evidenceMessageIds": [
+              "m_03",
+              "m_05"
+            ],
+            "firstSeenTurn": 5,
+            "updatedAt": "2026-11-01T10:00:45.000Z"
+          },
+          {
+            "id": "i_03",
+            "type": "open_question",
+            "content": "企业是否愿意为初级岗位再培训买单？",
+            "evidenceMessageIds": [
+              "m_05"
+            ],
+            "firstSeenTurn": 5,
+            "updatedAt": "2026-11-01T10:00:45.000Z"
+          }
+        ]
+      },
+      "createdAt": "2026-11-01T10:00:45.000Z"
+    },
+    {
+      "id": "evt_10",
+      "seq": 10,
+      "type": "turn.started",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "turnIndex": 4,
+        "speakerId": "e_host",
+        "speakerName": "林致远",
+        "intent": "mediate",
+        "turnFocus": "节奏与议题边界·第4轮",
+        "messageId": "m_04",
+        "references": [
+          "m_02"
+        ],
+        "targetMessageId": "m_03"
+      },
+      "createdAt": "2026-11-01T10:00:50.000Z"
+    },
+    {
+      "id": "evt_11",
+      "seq": 11,
+      "type": "message.completed",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "message": {
+          "id": "m_04",
+          "expertId": "e_host",
+          "speakerName": "林致远",
+          "speakerTitle": "资深圆桌主持",
+          "speakerColor": "#E5E7EB",
+          "content": "数据上更微妙：招聘量下降和岗位消失不是一回事，前者会先出现。",
+          "intent": "mediate",
+          "turnIndex": 4,
+          "charCount": 30,
+          "degraded": false,
+          "targetMessageId": "m_03",
+          "references": [
+            "m_02"
+          ],
+          "createdAt": "2026-11-01T10:00:54.000Z"
+        }
+      },
+      "createdAt": "2026-11-01T10:00:54.000Z"
+    },
+    {
+      "id": "evt_12",
+      "seq": 12,
+      "type": "turn.started",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "turnIndex": 5,
+        "speakerId": "e_02",
+        "speakerName": "许澜",
+        "intent": "extend",
+        "turnFocus": "组织行为与新人成长·第5轮",
+        "messageId": "m_05",
+        "references": [
+          "m_03"
+        ],
+        "targetMessageId": "m_04"
+      },
+      "createdAt": "2026-11-01T10:01:00.000Z"
+    },
+    {
+      "id": "evt_13",
+      "seq": 13,
+      "type": "message.completed",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "message": {
+          "id": "m_05",
+          "expertId": "e_02",
+          "speakerName": "许澜",
+          "speakerTitle": "副教授",
+          "speakerColor": "#2F8F8A",
+          "content": "如果只看大公司样本，结论会系统性偏乐观，中小企业才是多数。",
+          "intent": "extend",
+          "turnIndex": 5,
+          "charCount": 29,
+          "degraded": false,
+          "targetMessageId": "m_04",
+          "references": [
+            "m_03"
+          ],
+          "createdAt": "2026-11-01T10:01:04.000Z"
+        }
+      },
+      "createdAt": "2026-11-01T10:01:04.000Z"
+    },
+    {
+      "id": "evt_14",
+      "seq": 14,
+      "type": "turn.started",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "turnIndex": 6,
+        "speakerId": "e_02",
+        "speakerName": "许澜",
+        "intent": "support",
+        "turnFocus": "组织行为与新人成长·第6轮",
+        "messageId": "m_06",
+        "references": [
+          "m_04"
+        ],
+        "targetMessageId": "m_05"
+      },
+      "createdAt": "2026-11-01T10:01:10.000Z"
+    },
+    {
+      "id": "evt_15",
+      "seq": 15,
+      "type": "message.completed",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "message": {
+          "id": "m_06",
+          "expertId": "e_02",
+          "speakerName": "许澜",
+          "speakerTitle": "副教授",
+          "speakerColor": "#2F8F8A",
+          "content": "我更关心边界条件：什么情况下这个判断会失效？",
+          "intent": "support",
+          "turnIndex": 6,
+          "charCount": 22,
+          "degraded": false,
+          "targetMessageId": "m_05",
+          "references": [
+            "m_04"
+          ],
+          "createdAt": "2026-11-01T10:01:14.000Z"
+        }
+      },
+      "createdAt": "2026-11-01T10:01:14.000Z"
+    },
+    {
+      "id": "evt_16",
+      "seq": 16,
+      "type": "insight.updated",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "insights": [
+          {
+            "id": "i_01",
+            "type": "consensus",
+            "content": "双方都认为初级岗位的职责会变化，而不是原样保留",
+            "evidenceMessageIds": [
+              "m_02",
+              "m_03"
+            ],
+            "firstSeenTurn": 3,
+            "updatedAt": "2026-11-01T10:01:15.000Z"
+          },
+          {
+            "id": "i_02",
+            "type": "divergence",
+            "content": "变化是升级还是压缩，存在分歧",
+            "evidenceMessageIds": [
+              "m_03",
+              "m_05"
+            ],
+            "firstSeenTurn": 5,
+            "updatedAt": "2026-11-01T10:01:15.000Z"
+          },
+          {
+            "id": "i_03",
+            "type": "open_question",
+            "content": "企业是否愿意为初级岗位再培训买单？",
+            "evidenceMessageIds": [
+              "m_05"
+            ],
+            "firstSeenTurn": 5,
+            "updatedAt": "2026-11-01T10:01:15.000Z"
+          }
+        ]
+      },
+      "createdAt": "2026-11-01T10:01:15.000Z"
+    },
+    {
+      "id": "evt_17",
+      "seq": 17,
+      "type": "turn.started",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "turnIndex": 7,
+        "speakerId": "e_01",
+        "speakerName": "周明",
+        "intent": "clarify",
+        "turnFocus": "工程实践与岗位结构·第7轮",
+        "messageId": "m_07",
+        "references": [
+          "m_05"
+        ],
+        "targetMessageId": "m_06"
+      },
+      "createdAt": "2026-11-01T10:01:20.000Z"
+    },
+    {
+      "id": "evt_18",
+      "seq": 18,
+      "type": "message.completed",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "message": {
+          "id": "m_07",
+          "expertId": "e_01",
+          "speakerName": "周明",
+          "speakerTitle": "技术负责人",
+          "speakerColor": "#3E6FD9",
+          "content": "我不太同意把问题简化成替代。真正发生的是任务被拆开，人还在，但岗位定义变了。",
+          "intent": "clarify",
+          "turnIndex": 7,
+          "charCount": 38,
+          "degraded": false,
+          "targetMessageId": "m_06",
+          "references": [
+            "m_05"
+          ],
+          "createdAt": "2026-11-01T10:01:24.000Z"
+        }
+      },
+      "createdAt": "2026-11-01T10:01:24.000Z"
+    },
+    {
+      "id": "evt_19",
+      "seq": 19,
+      "type": "turn.started",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "turnIndex": 8,
+        "speakerId": "e_host",
+        "speakerName": "林致远",
+        "intent": "redirect",
+        "turnFocus": "节奏与议题边界·第8轮",
+        "messageId": "m_08",
+        "references": [
+          "m_06"
+        ],
+        "targetMessageId": "m_07"
+      },
+      "createdAt": "2026-11-01T10:01:30.000Z"
+    },
+    {
+      "id": "evt_20",
+      "seq": 20,
+      "type": "message.completed",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "message": {
+          "id": "m_08",
+          "expertId": "e_host",
+          "speakerName": "林致远",
+          "speakerTitle": "资深圆桌主持",
+          "speakerColor": "#E5E7EB",
+          "content": "补一个角度：企业愿不愿意为再培训买单，决定了岗位是升级还是压缩。",
+          "intent": "redirect",
+          "turnIndex": 8,
+          "charCount": 32,
+          "degraded": false,
+          "targetMessageId": "m_07",
+          "references": [
+            "m_06"
+          ],
+          "createdAt": "2026-11-01T10:01:34.000Z"
+        }
+      },
+      "createdAt": "2026-11-01T10:01:34.000Z"
+    },
+    {
+      "id": "evt_21",
+      "seq": 21,
+      "type": "turn.started",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "turnIndex": 9,
+        "speakerId": "e_04",
+        "speakerName": "苏芮",
+        "intent": "extend",
+        "turnFocus": "团队成本与招聘节奏·第9轮",
+        "messageId": "m_09",
+        "references": [
+          "m_07"
+        ],
+        "targetMessageId": "m_08"
+      },
+      "createdAt": "2026-11-01T10:01:40.000Z"
+    },
+    {
+      "id": "evt_22",
+      "seq": 22,
+      "type": "message.completed",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "message": {
+          "id": "m_09",
+          "expertId": "e_04",
+          "speakerName": "苏芮",
+          "speakerTitle": "技术合伙人",
+          "speakerColor": "#7A8CA8",
+          "content": "这件事短期看成本，长期看的是组织能力能不能跟上。",
+          "intent": "extend",
+          "turnIndex": 9,
+          "charCount": 24,
+          "degraded": false,
+          "targetMessageId": "m_08",
+          "references": [
+            "m_07"
+          ],
+          "createdAt": "2026-11-01T10:01:44.000Z"
+        }
+      },
+      "createdAt": "2026-11-01T10:01:44.000Z"
+    },
+    {
+      "id": "evt_23",
+      "seq": 23,
+      "type": "insight.updated",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "insights": [
+          {
+            "id": "i_01",
+            "type": "consensus",
+            "content": "双方都认为初级岗位的职责会变化，而不是原样保留",
+            "evidenceMessageIds": [
+              "m_02",
+              "m_03"
+            ],
+            "firstSeenTurn": 3,
+            "updatedAt": "2026-11-01T10:01:45.000Z"
+          },
+          {
+            "id": "i_02",
+            "type": "divergence",
+            "content": "变化是升级还是压缩，存在分歧",
+            "evidenceMessageIds": [
+              "m_03",
+              "m_05"
+            ],
+            "firstSeenTurn": 5,
+            "updatedAt": "2026-11-01T10:01:45.000Z"
+          },
+          {
+            "id": "i_03",
+            "type": "open_question",
+            "content": "企业是否愿意为初级岗位再培训买单？",
+            "evidenceMessageIds": [
+              "m_05"
+            ],
+            "firstSeenTurn": 5,
+            "updatedAt": "2026-11-01T10:01:45.000Z"
+          }
+        ]
+      },
+      "createdAt": "2026-11-01T10:01:45.000Z"
+    },
+    {
+      "id": "evt_24",
+      "seq": 24,
+      "type": "turn.started",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "turnIndex": 10,
+        "speakerId": "e_04",
+        "speakerName": "苏芮",
+        "intent": "support",
+        "turnFocus": "团队成本与招聘节奏·第10轮",
+        "messageId": "m_10",
+        "references": [
+          "m_08"
+        ],
+        "targetMessageId": "m_09"
+      },
+      "createdAt": "2026-11-01T10:01:50.000Z"
+    },
+    {
+      "id": "evt_25",
+      "seq": 25,
+      "type": "message.completed",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "message": {
+          "id": "m_10",
+          "expertId": "e_04",
+          "speakerName": "苏芮",
+          "speakerTitle": "技术合伙人",
+          "speakerColor": "#7A8CA8",
+          "content": "我同意一半。方向没错，但把责任全推给个人，忽略了过去三年的招聘结构变化。",
+          "intent": "support",
+          "turnIndex": 10,
+          "charCount": 36,
+          "degraded": false,
+          "targetMessageId": "m_09",
+          "references": [
+            "m_08"
+          ],
+          "createdAt": "2026-11-01T10:01:54.000Z"
+        }
+      },
+      "createdAt": "2026-11-01T10:01:54.000Z"
+    },
+    {
+      "id": "evt_26",
+      "seq": 26,
+      "type": "turn.started",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "turnIndex": 11,
+        "speakerId": "e_host",
+        "speakerName": "林致远",
+        "intent": "redirect",
+        "turnFocus": "节奏与议题边界·第11轮",
+        "messageId": "m_11",
+        "references": [
+          "m_09"
+        ],
+        "targetMessageId": "m_10"
+      },
+      "createdAt": "2026-11-01T10:02:00.000Z"
+    },
+    {
+      "id": "evt_27",
+      "seq": 27,
+      "type": "message.completed",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "message": {
+          "id": "m_11",
+          "expertId": "e_host",
+          "speakerName": "林致远",
+          "speakerTitle": "资深圆桌主持",
+          "speakerColor": "#E5E7EB",
+          "content": "数据上更微妙：招聘量下降和岗位消失不是一回事，前者会先出现。",
+          "intent": "redirect",
+          "turnIndex": 11,
+          "charCount": 30,
+          "degraded": false,
+          "targetMessageId": "m_10",
+          "references": [
+            "m_09"
+          ],
+          "createdAt": "2026-11-01T10:02:04.000Z"
+        }
+      },
+      "createdAt": "2026-11-01T10:02:04.000Z"
+    },
+    {
+      "id": "evt_28",
+      "seq": 28,
+      "type": "turn.started",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "turnIndex": 12,
+        "speakerId": "e_host",
+        "speakerName": "林致远",
+        "intent": "summary",
+        "turnFocus": "节奏与议题边界·第12轮",
+        "messageId": "m_12",
+        "references": [
+          "m_10"
+        ],
+        "targetMessageId": "m_11"
+      },
+      "createdAt": "2026-11-01T10:02:10.000Z"
+    },
+    {
+      "id": "evt_29",
+      "seq": 29,
+      "type": "message.completed",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "message": {
+          "id": "m_12",
+          "expertId": "e_host",
+          "speakerName": "林致远",
+          "speakerTitle": "资深圆桌主持",
+          "speakerColor": "#E5E7EB",
+          "content": "如果只看大公司样本，结论会系统性偏乐观，中小企业才是多数。",
+          "intent": "summary",
+          "turnIndex": 12,
+          "charCount": 29,
+          "degraded": false,
+          "targetMessageId": "m_11",
+          "references": [
+            "m_10"
+          ],
+          "createdAt": "2026-11-01T10:02:14.000Z"
+        }
+      },
+      "createdAt": "2026-11-01T10:02:14.000Z"
+    },
+    {
+      "id": "evt_30",
+      "seq": 30,
+      "type": "discussion.summarizing",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "reason": "auto",
+        "startedAt": "2026-11-01T10:06:40.000Z"
+      },
+      "createdAt": "2026-11-01T10:06:40.000Z"
+    },
+    {
+      "id": "evt_31",
+      "seq": 31,
+      "type": "summary.completed",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "summary": {
+          "content": "这场讨论的共识是：初级岗位的职责边界会变化。主要分歧在于变化是能力升级还是岗位压缩；尚未解决的是企业是否愿意为再培训买单。",
+          "isFallback": false,
+          "createdAt": "2026-11-01T10:07:00.000Z"
+        }
+      },
+      "createdAt": "2026-11-01T10:07:00.000Z"
+    },
+    {
+      "id": "evt_32",
+      "seq": 32,
+      "type": "discussion.ended",
+      "payload": {
+        "discussionId": "d_qa_main",
+        "endedAt": "2026-11-01T10:07:01.000Z"
+      },
+      "createdAt": "2026-11-01T10:07:01.000Z"
+    }
+  ]
+}

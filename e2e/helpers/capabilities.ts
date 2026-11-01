@@ -27,6 +27,8 @@ export interface BackendCaps {
 export interface UiCaps {
   web: boolean;
   hasRoot: boolean;
+  /** 首页可用：有新建入口或列表/空态之一（空库也算可用）。 */
+  home: boolean;
   createForm: boolean;
   roster: boolean;
   stage: boolean;
@@ -72,6 +74,7 @@ export async function probeUi(page: Page): Promise<UiCaps> {
   const caps: UiCaps = {
     web: false,
     hasRoot: false,
+    home: false,
     createForm: false,
     roster: false,
     stage: false,
@@ -110,6 +113,10 @@ export async function probeUi(page: Page): Promise<UiCaps> {
     const w = window as unknown as { __qa?: { sse?: unknown } };
     return typeof w.__qa?.sse !== "undefined";
   });
+
+  // 首页可用性：新建入口 / 讨论卡片 / 空态 三者有其一即可（空库不是缺陷）
+  caps.home = (await count(SEL.newDiscussion)) > 0 || (await count(SEL.discCard)) > 0 || (await count(SEL.homeEmpty)) > 0;
+  if (!caps.home) caps.reasons["home"] = "首页未渲染列表/空态/新建入口（路由或数据层未接）";
 
   // 创建页
   try {
@@ -161,6 +168,7 @@ export function formatCaps(backend: BackendCaps, ui: UiCaps | null): string {
     "能力探测（E2E capability matrix）",
     line("api", `${backend.reachable ? "OK" : "DOWN"} llmMode=${backend.llmMode ?? "?"} dbReady=${backend.dbReady ?? "?"} version=${backend.version ?? "?"}${backend.error ? ` err=${backend.error}` : ""}`),
     line("web", ui ? `${ui.web ? "OK" : "DOWN"} testids=${ui.testids.length} convention=${ui.convention}` : "未探测"),
+    line("home", ui ? `${ui.home ? "OK" : "MISSING"} ${ui.reasons["home"] ?? ""}` : "-"),
     line("createForm", ui ? `${ui.createForm ? "OK" : "MISSING"} ${ui.reasons["createForm"] ?? ""}` : "-"),
     line("stage", ui ? `${ui.stage ? "OK" : "MISSING"} ${ui.reasons["stage"] ?? ""}` : "-"),
     line("replay", ui ? `${ui.replay ? "OK" : "MISSING"} ${ui.reasons["replay"] ?? ""}` : "-"),

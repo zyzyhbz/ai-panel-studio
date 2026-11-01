@@ -1,0 +1,21 @@
+{
+  "$schema": "qa/llm-fixture@1",
+  "negative": true,
+  "expectNotes": [
+    "丢弃并重选，不得崩溃"
+  ],
+  "onExhausted": "last",
+  "name": "decision/invalid-speaker",
+  "kind": "decision",
+  "scenario": "invalid-json",
+  "description": "返回不存在的 expertId",
+  "expectOutcome": "abort_turn",
+  "steps": [
+    {
+      "content": "{\"speakerId\":\"e_99\",\"intent\":\"rebut\",\"turnFocus\":\"幽灵专家\",\"messageId\":\"m_02\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_01\",\"intent\":\"rebut\",\"turnFocus\":\"重选成功\",\"messageId\":\"m_02\"}"
+    }
+  ]
+}

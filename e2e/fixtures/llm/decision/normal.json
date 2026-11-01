@@ -1,0 +1,102 @@
+{
+  "$schema": "qa/llm-fixture@1",
+  "negative": false,
+  "expectNotes": [
+    "同一 speaker 不连续 3 次",
+    "不等于 sortOrder 轮转",
+    "host 占比约 1/3",
+    "含 references/targetMessageId"
+  ],
+  "onExhausted": "last",
+  "name": "decision/normal",
+  "kind": "decision",
+  "scenario": "normal",
+  "description": "12 轮非轮转调度：开场 → 专家抢答/反驳 → 主持追问/串联 → 总结",
+  "expectOutcome": "ok",
+  "steps": [
+    {
+      "content": "{\"speakerId\":\"e_host\",\"intent\":\"opening\",\"turnFocus\":\"节奏与议题边界·第1轮\",\"messageId\":\"m_01\"}",
+      "meta": {
+        "model": "deepseek-flash",
+        "thinking": "disabled"
+      }
+    },
+    {
+      "content": "{\"speakerId\":\"e_04\",\"intent\":\"support\",\"turnFocus\":\"团队成本与招聘节奏·第2轮\",\"messageId\":\"m_02\"}",
+      "meta": {
+        "model": "deepseek-flash",
+        "thinking": "disabled"
+      }
+    },
+    {
+      "content": "{\"speakerId\":\"e_03\",\"intent\":\"clarify\",\"turnFocus\":\"就业结构与技能溢价·第3轮\",\"messageId\":\"m_03\",\"targetMessageId\":\"m_02\"}",
+      "meta": {
+        "model": "deepseek-flash",
+        "thinking": "disabled"
+      }
+    },
+    {
+      "content": "{\"speakerId\":\"e_host\",\"intent\":\"mediate\",\"turnFocus\":\"节奏与议题边界·第4轮\",\"messageId\":\"m_04\",\"targetMessageId\":\"m_03\",\"references\":[\"m_02\",\"m_03\"]}",
+      "meta": {
+        "model": "deepseek-flash",
+        "thinking": "disabled"
+      }
+    },
+    {
+      "content": "{\"speakerId\":\"e_02\",\"intent\":\"extend\",\"turnFocus\":\"组织行为与新人成长·第5轮\",\"messageId\":\"m_05\",\"targetMessageId\":\"m_04\"}",
+      "meta": {
+        "model": "deepseek-flash",
+        "thinking": "disabled"
+      }
+    },
+    {
+      "content": "{\"speakerId\":\"e_02\",\"intent\":\"support\",\"turnFocus\":\"组织行为与新人成长·第6轮\",\"messageId\":\"m_06\",\"targetMessageId\":\"m_05\"}",
+      "meta": {
+        "model": "deepseek-flash",
+        "thinking": "disabled"
+      }
+    },
+    {
+      "content": "{\"speakerId\":\"e_01\",\"intent\":\"clarify\",\"turnFocus\":\"工程实践与岗位结构·第7轮\",\"messageId\":\"m_07\",\"targetMessageId\":\"m_06\"}",
+      "meta": {
+        "model": "deepseek-flash",
+        "thinking": "disabled"
+      }
+    },
+    {
+      "content": "{\"speakerId\":\"e_host\",\"intent\":\"redirect\",\"turnFocus\":\"节奏与议题边界·第8轮\",\"messageId\":\"m_08\",\"targetMessageId\":\"m_07\",\"references\":[\"m_06\",\"m_07\"]}",
+      "meta": {
+        "model": "deepseek-flash",
+        "thinking": "disabled"
+      }
+    },
+    {
+      "content": "{\"speakerId\":\"e_04\",\"intent\":\"extend\",\"turnFocus\":\"团队成本与招聘节奏·第9轮\",\"messageId\":\"m_09\",\"targetMessageId\":\"m_08\"}",
+      "meta": {
+        "model": "deepseek-flash",
+        "thinking": "disabled"
+      }
+    },
+    {
+      "content": "{\"speakerId\":\"e_04\",\"intent\":\"support\",\"turnFocus\":\"团队成本与招聘节奏·第10轮\",\"messageId\":\"m_10\",\"targetMessageId\":\"m_09\"}",
+      "meta": {
+        "model": "deepseek-flash",
+        "thinking": "disabled"
+      }
+    },
+    {
+      "content": "{\"speakerId\":\"e_host\",\"intent\":\"redirect\",\"turnFocus\":\"节奏与议题边界·第11轮\",\"messageId\":\"m_11\",\"targetMessageId\":\"m_10\",\"references\":[\"m_09\",\"m_10\"]}",
+      "meta": {
+        "model": "deepseek-flash",
+        "thinking": "disabled"
+      }
+    },
+    {
+      "content": "{\"speakerId\":\"e_host\",\"intent\":\"summary\",\"turnFocus\":\"节奏与议题边界·第12轮\",\"messageId\":\"m_12\",\"targetMessageId\":\"m_11\"}",
+      "meta": {
+        "model": "deepseek-flash",
+        "thinking": "disabled"
+      }
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { apiUrl } from "./env";
+import { env } from "./env";
 import type {
   ApiError,
   DiscussionDetail,
@@ -30,7 +30,9 @@ export interface RequestOptions {
 }
 
 export class ApiClient {
-  constructor(private readonly base: string = apiUrl("")) {}
+  // 注意：base 不能带尾斜杠，否则 `${base}${path}` 会拼出 `//api/health`，
+  // Fastify 对双斜杠路径返回 404（曾导致能力探测把"后端正常"误判成 DOWN）。
+  constructor(private readonly base: string = env.apiURL.replace(/\/+$/, "")) {}
 
   /** 是否可达（不抛错），供能力探测使用。 */
   async reachable(timeoutMs = 2500): Promise<boolean> {

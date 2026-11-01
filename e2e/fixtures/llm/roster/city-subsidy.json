@@ -1,20 +1,21 @@
 {
   "$schema": "qa/llm-fixture@1",
+  "negative": false,
+  "expectNotes": [
+    "颜色唯一",
+    "极性 >=3 类",
+    "姓名不重复",
+    "共 6 人"
+  ],
+  "onExhausted": "last",
   "name": "roster/city-subsidy",
   "kind": "roster",
   "scenario": "normal",
-  "negative": false,
-  "description": "议题「二线城市靠补贴抢人，能留住人吗？」的主持人 + 5 位专家",
+  "description": "议题「二线城市靠补贴抢人，能留住人吗？」：1 主持 + 5 专家",
   "expectOutcome": "ok",
-  "expectNotes": [
-    "颜色唯一",
-    "polarity 至少 3 类",
-    "1 主持 + 5 专家"
-  ],
-  "onExhausted": "last",
   "steps": [
     {
-      "content": "{\"experts\":[{\"id\":\"e_host\",\"role\":\"host\",\"name\":\"主持人·邵川\",\"profession\":\"城市观察主持\",\"title\":\"主编\",\"stance\":\"中立，负责开场、追问、串联与收尾\",\"stanceAxis\":\"补贴留人 vs 产业留人\",\"polarity\":\"neutral\",\"color\":\"#E5E7EB\",\"focusArea\":\"节奏与议题边界\",\"sortOrder\":0},{\"id\":\"e_01\",\"role\":\"expert\",\"name\":\"冯楠\",\"profession\":\"区域经济学者\",\"title\":\"教授\",\"stance\":\"补贴只能改变短期选择，留人靠产业\",\"stanceAxis\":\"补贴留人 vs 产业留人\",\"polarity\":\"oppose\",\"color\":\"#3E6FD9\",\"focusArea\":\"区域经济与人口流动\",\"sortOrder\":1},{\"id\":\"e_02\",\"role\":\"expert\",\"name\":\"于澈\",\"profession\":\"地方政府招商干部\",\"title\":\"副局长\",\"stance\":\"补贴是启动器，配套才是留存器\",\"stanceAxis\":\"补贴留人 vs 产业留人\",\"polarity\":\"neutral\",\"color\":\"#2F8F8A\",\"focusArea\":\"招商政策与落地配套\",\"sortOrder\":2},{\"id\":\"e_03\",\"role\":\"expert\",\"name\":\"蒋禾\",\"profession\":\"猎头顾问\",\"title\":\"城市负责人\",\"stance\":\"人才跟着岗位走，补贴只是补贴\",\"stanceAxis\":\"补贴留人 vs 产业留人\",\"polarity\":\"oppose\",\"color\":\"#C2673F\",\"focusArea\":\"岗位供给与薪酬结构\",\"sortOrder\":3},{\"id\":\"e_04\",\"role\":\"expert\",\"name\":\"温言\",\"profession\":\"落户青年\",\"title\":\"产品经理\",\"stance\":\"补贴确实让我多留了两年\",\"stanceAxis\":\"补贴留人 vs 产业留人\",\"polarity\":\"support\",\"color\":\"#7A8CA8\",\"focusArea\":\"个体选择与生活成本\",\"sortOrder\":4},{\"id\":\"e_05\",\"role\":\"expert\",\"name\":\"段铭\",\"profession\":\"产业园运营方\",\"title\":\"总经理\",\"stance\":\"没有产业配套的补贴就是一次性红包\",\"stanceAxis\":\"补贴留人 vs 产业留人\",\"polarity\":\"strong_oppose\",\"color\":\"#9A6E4F\",\"focusArea\":\"园区运营与企业留存\",\"sortOrder\":5}]}"
+      "content": "{\"experts\":[{\"id\":\"e_host\",\"role\":\"host\",\"name\":\"邵川\",\"profession\":\"城市观察主持\",\"title\":\"主编\",\"stance\":\"中立，负责开场、追问、串联与收尾\",\"stanceAxis\":\"补贴留人 vs 产业留人\",\"polarity\":\"neutral\",\"color\":\"#E5E7EB\",\"focusArea\":\"节奏与议题边界\",\"sortOrder\":0},{\"id\":\"e_01\",\"role\":\"expert\",\"name\":\"冯楠\",\"profession\":\"区域经济学者\",\"title\":\"教授\",\"stance\":\"补贴只能改变短期选择，留人靠产业\",\"stanceAxis\":\"补贴留人 vs 产业留人\",\"polarity\":\"oppose\",\"color\":\"#3E6FD9\",\"focusArea\":\"区域经济与人口流动\",\"sortOrder\":1},{\"id\":\"e_02\",\"role\":\"expert\",\"name\":\"于澈\",\"profession\":\"地方政府招商干部\",\"title\":\"副局长\",\"stance\":\"补贴是启动器，配套才是留存器\",\"stanceAxis\":\"补贴留人 vs 产业留人\",\"polarity\":\"neutral\",\"color\":\"#2F8F8A\",\"focusArea\":\"招商政策与落地配套\",\"sortOrder\":2},{\"id\":\"e_03\",\"role\":\"expert\",\"name\":\"蒋禾\",\"profession\":\"猎头顾问\",\"title\":\"城市负责人\",\"stance\":\"人才跟着岗位走，补贴只是补贴\",\"stanceAxis\":\"补贴留人 vs 产业留人\",\"polarity\":\"oppose\",\"color\":\"#C2673F\",\"focusArea\":\"岗位供给与薪酬结构\",\"sortOrder\":3},{\"id\":\"e_04\",\"role\":\"expert\",\"name\":\"温言\",\"profession\":\"落户青年\",\"title\":\"产品经理\",\"stance\":\"补贴确实让我多留了两年\",\"stanceAxis\":\"补贴留人 vs 产业留人\",\"polarity\":\"support\",\"color\":\"#7A8CA8\",\"focusArea\":\"个体选择与生活成本\",\"sortOrder\":4},{\"id\":\"e_05\",\"role\":\"expert\",\"name\":\"段铭\",\"profession\":\"产业园运营方\",\"title\":\"总经理\",\"stance\":\"没有产业配套的补贴就是一次性红包\",\"stanceAxis\":\"补贴留人 vs 产业留人\",\"polarity\":\"strong_oppose\",\"color\":\"#9A6E4F\",\"focusArea\":\"园区运营与企业留存\",\"sortOrder\":5}]}"
     }
   ]
 }

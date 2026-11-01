@@ -1,0 +1,25 @@
+{
+  "$schema": "qa/llm-fixture@1",
+  "negative": true,
+  "expectNotes": [
+    "不得产生 charCount=0 的消息",
+    "turn.aborted reason=empty_output"
+  ],
+  "onExhausted": "last",
+  "name": "speech/empty",
+  "kind": "speech",
+  "scenario": "empty",
+  "description": "空串 / 纯空白 / 仅标点",
+  "expectOutcome": "abort_turn",
+  "steps": [
+    {
+      "content": ""
+    },
+    {
+      "content": "   "
+    },
+    {
+      "content": "。。。"
+    }
+  ]
+}

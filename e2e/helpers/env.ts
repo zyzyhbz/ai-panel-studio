@@ -1,3 +1,4 @@
+import os from "node:os";
 import path from "node:path";
 
 /**
@@ -35,7 +36,17 @@ export const env = {
   e2eRoot: E2E_ROOT,
   repoRoot: REPO_ROOT,
   fixturesDir: path.join(E2E_ROOT, "fixtures"),
-  artifactsDir: path.join(E2E_ROOT, ".artifacts"),
+  /**
+   * 产物目录必须是**纯 ASCII 绝对路径**。
+   *
+   * 踩过的坑：仓库路径含中文（`D:\AI开发\...`），Playwright 把 trace 写到
+   * `e2e/.artifacts/...` 后，在 browserContext.close 阶段按 cp936 拼路径导致
+   * `ENOENT: D:\AI寮€鍙慭...`，整套用例因此失败——不是断言失败，是路径编码失败。
+   *
+   * 默认放到系统临时目录（纯 ASCII）：%TEMP%\ai-panel-e2e。
+   * 可用 E2E_ARTIFACTS_DIR 覆盖，但请保持 ASCII。
+   */
+  artifactsDir: str("E2E_ARTIFACTS_DIR", path.join(os.tmpdir(), "ai-panel-e2e")),
   /** 后端 SQLite 路径（只读断言用），与 .env.example 的 DATABASE_PATH 对齐。 */
   dbPath: str("E2E_DB_PATH", path.join(REPO_ROOT, "data", "app.db")),
   /** 后端日志文件（可选）；不存在时日志断言走 skip。 */

@@ -1,20 +1,21 @@
 {
   "$schema": "qa/llm-fixture@1",
+  "negative": false,
+  "expectNotes": [
+    "颜色唯一",
+    "极性 >=3 类",
+    "姓名不重复",
+    "共 5 人"
+  ],
+  "onExhausted": "last",
   "name": "roster/remote-default",
   "kind": "roster",
   "scenario": "normal",
-  "negative": false,
-  "description": "议题「远程办公应该成为默认工作制吗？」的主持人 + 4 位专家",
+  "description": "议题「远程办公应该成为默认工作制吗？」：1 主持 + 4 专家",
   "expectOutcome": "ok",
-  "expectNotes": [
-    "颜色唯一",
-    "polarity 至少 3 类",
-    "1 主持 + 4 专家"
-  ],
-  "onExhausted": "last",
   "steps": [
     {
-      "content": "{\"experts\":[{\"id\":\"e_host\",\"role\":\"host\",\"name\":\"主持人·何嘉\",\"profession\":\"商业访谈主持\",\"title\":\"制片人\",\"stance\":\"中立，负责开场、追问、串联与收尾\",\"stanceAxis\":\"默认远程 vs 默认办公\",\"polarity\":\"neutral\",\"color\":\"#E5E7EB\",\"focusArea\":\"节奏与议题边界\",\"sortOrder\":0},{\"id\":\"e_01\",\"role\":\"expert\",\"name\":\"沈聿\",\"profession\":\"分布式团队顾问\",\"title\":\"首席顾问\",\"stance\":\"远程应该是默认选项，办公室是补充\",\"stanceAxis\":\"默认远程 vs 默认办公\",\"polarity\":\"strong_support\",\"color\":\"#3E6FD9\",\"focusArea\":\"异步协作与团队节奏\",\"sortOrder\":1},{\"id\":\"e_02\",\"role\":\"expert\",\"name\":\"罗晴\",\"profession\":\"人力资源负责人\",\"title\":\"人力资源总监\",\"stance\":\"混合制才是可持续解\",\"stanceAxis\":\"默认远程 vs 默认办公\",\"polarity\":\"neutral\",\"color\":\"#2F8F8A\",\"focusArea\":\"用工制度与管理成本\",\"sortOrder\":2},{\"id\":\"e_03\",\"role\":\"expert\",\"name\":\"韩冬\",\"profession\":\"房地产分析师\",\"title\":\"研究主管\",\"stance\":\"默认远程会削弱中心城区的协作密度\",\"stanceAxis\":\"默认远程 vs 默认办公\",\"polarity\":\"oppose\",\"color\":\"#C2673F\",\"focusArea\":\"办公空间与城市密度\",\"sortOrder\":3},{\"id\":\"e_04\",\"role\":\"expert\",\"name\":\"白露\",\"profession\":\"独立设计师\",\"title\":\"自由职业者\",\"stance\":\"远程让协作更贵而不是更便宜\",\"stanceAxis\":\"默认远程 vs 默认办公\",\"polarity\":\"strong_oppose\",\"color\":\"#7A8CA8\",\"focusArea\":\"创意协作的隐性成本\",\"sortOrder\":4}]}"
+      "content": "{\"experts\":[{\"id\":\"e_host\",\"role\":\"host\",\"name\":\"何嘉\",\"profession\":\"商业访谈主持\",\"title\":\"制片人\",\"stance\":\"中立，负责开场、追问、串联与收尾\",\"stanceAxis\":\"默认远程 vs 默认办公\",\"polarity\":\"neutral\",\"color\":\"#E5E7EB\",\"focusArea\":\"节奏与议题边界\",\"sortOrder\":0},{\"id\":\"e_01\",\"role\":\"expert\",\"name\":\"沈聿\",\"profession\":\"分布式团队顾问\",\"title\":\"首席顾问\",\"stance\":\"远程应该是默认选项，办公室是补充\",\"stanceAxis\":\"默认远程 vs 默认办公\",\"polarity\":\"strong_support\",\"color\":\"#3E6FD9\",\"focusArea\":\"异步协作与团队节奏\",\"sortOrder\":1},{\"id\":\"e_02\",\"role\":\"expert\",\"name\":\"罗晴\",\"profession\":\"人力资源负责人\",\"title\":\"人力资源总监\",\"stance\":\"混合制才是可持续解\",\"stanceAxis\":\"默认远程 vs 默认办公\",\"polarity\":\"neutral\",\"color\":\"#2F8F8A\",\"focusArea\":\"用工制度与管理成本\",\"sortOrder\":2},{\"id\":\"e_03\",\"role\":\"expert\",\"name\":\"韩冬\",\"profession\":\"房地产分析师\",\"title\":\"研究主管\",\"stance\":\"默认远程会削弱中心城区的协作密度\",\"stanceAxis\":\"默认远程 vs 默认办公\",\"polarity\":\"oppose\",\"color\":\"#C2673F\",\"focusArea\":\"办公空间与城市密度\",\"sortOrder\":3},{\"id\":\"e_04\",\"role\":\"expert\",\"name\":\"白露\",\"profession\":\"独立设计师\",\"title\":\"自由职业者\",\"stance\":\"远程让协作更贵而不是更便宜\",\"stanceAxis\":\"默认远程 vs 默认办公\",\"polarity\":\"strong_oppose\",\"color\":\"#7A8CA8\",\"focusArea\":\"创意协作的隐性成本\",\"sortOrder\":4}]}"
     }
   ]
 }

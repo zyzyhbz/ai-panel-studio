@@ -1,0 +1,19 @@
+{
+  "$schema": "qa/llm-fixture@1",
+  "negative": true,
+  "expectNotes": [
+    "仍发 discussion.ended",
+    "前端显示总结未生成"
+  ],
+  "onExhausted": "last",
+  "name": "summary/empty",
+  "kind": "summary",
+  "scenario": "empty",
+  "description": "总结为空 → 允许 summary=null 的 ended（06 §1.4）",
+  "expectOutcome": "degraded",
+  "steps": [
+    {
+      "content": ""
+    }
+  ]
+}

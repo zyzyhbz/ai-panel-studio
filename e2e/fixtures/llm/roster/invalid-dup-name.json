@@ -1,21 +1,22 @@
 {
   "$schema": "qa/llm-fixture@1",
+  "negative": true,
+  "expectNotes": [
+    "第一次输出必须被拒绝",
+    "重试后成功，不得原样落库"
+  ],
+  "onExhausted": "last",
   "name": "roster/invalid-dup-name",
   "kind": "roster",
   "scenario": "invalid-json",
-  "negative": true,
   "description": "两位专家同名，必须被拒绝",
   "expectOutcome": "retry_then_ok",
-  "expectNotes": [
-    "姓名唯一性校验生效"
-  ],
-  "onExhausted": "last",
   "steps": [
     {
-      "content": "{\"experts\":[{\"id\":\"e_host\",\"role\":\"host\",\"name\":\"主持人·林致远\",\"profession\":\"科技主持人\",\"title\":\"资深圆桌主持\",\"stance\":\"中立，负责开场、追问、串联与收尾\",\"stanceAxis\":\"岗位替代 vs 岗位重构\",\"polarity\":\"neutral\",\"color\":\"#E5E7EB\",\"focusArea\":\"节奏与议题边界\",\"sortOrder\":0},{\"id\":\"e_01\",\"role\":\"expert\",\"name\":\"周明\",\"profession\":\"软件工程师\",\"title\":\"技术负责人\",\"stance\":\"AI 会重构初级岗位，而不是简单消灭\",\"stanceAxis\":\"岗位替代 vs 岗位重构\",\"polarity\":\"oppose\",\"color\":\"#3E6FD9\",\"focusArea\":\"工程实践与岗位结构\",\"sortOrder\":1},{\"id\":\"e_02\",\"role\":\"expert\",\"name\":\"周明\",\"profession\":\"组织心理学研究者\",\"title\":\"副教授\",\"stance\":\"岗位会被重组，但入行门槛会明显抬高\",\"stanceAxis\":\"岗位替代 vs 岗位重构\",\"polarity\":\"neutral\",\"color\":\"#2F8F8A\",\"focusArea\":\"组织行为与新人成长\",\"sortOrder\":2},{\"id\":\"e_03\",\"role\":\"expert\",\"name\":\"陈默\",\"profession\":\"劳动经济学家\",\"title\":\"研究员\",\"stance\":\"AI 先替代任务，再压缩初级岗位数量\",\"stanceAxis\":\"岗位替代 vs 岗位重构\",\"polarity\":\"support\",\"color\":\"#C2673F\",\"focusArea\":\"就业结构与技能溢价\",\"sortOrder\":3},{\"id\":\"e_04\",\"role\":\"expert\",\"name\":\"苏芮\",\"profession\":\"创业公司 CTO\",\"title\":\"技术合伙人\",\"stance\":\"两年内初级招聘会明显收缩\",\"stanceAxis\":\"岗位替代 vs 岗位重构\",\"polarity\":\"strong_support\",\"color\":\"#7A8CA8\",\"focusArea\":\"团队成本与招聘节奏\",\"sortOrder\":4}]}"
+      "content": "{\"experts\":[{\"id\":\"e_host\",\"role\":\"host\",\"name\":\"林致远\",\"profession\":\"科技主持人\",\"title\":\"资深圆桌主持\",\"stance\":\"中立，负责开场、追问、串联与收尾\",\"stanceAxis\":\"岗位替代 vs 岗位重构\",\"polarity\":\"neutral\",\"color\":\"#E5E7EB\",\"focusArea\":\"节奏与议题边界\",\"sortOrder\":0},{\"id\":\"e_01\",\"role\":\"expert\",\"name\":\"周明\",\"profession\":\"软件工程师\",\"title\":\"技术负责人\",\"stance\":\"AI 会重构初级岗位，而不是简单消灭\",\"stanceAxis\":\"岗位替代 vs 岗位重构\",\"polarity\":\"oppose\",\"color\":\"#3E6FD9\",\"focusArea\":\"工程实践与岗位结构\",\"sortOrder\":1},{\"id\":\"e_02\",\"role\":\"expert\",\"name\":\"周明\",\"profession\":\"组织心理学研究者\",\"title\":\"副教授\",\"stance\":\"岗位会被重组，但入行门槛会明显抬高\",\"stanceAxis\":\"岗位替代 vs 岗位重构\",\"polarity\":\"neutral\",\"color\":\"#2F8F8A\",\"focusArea\":\"组织行为与新人成长\",\"sortOrder\":2},{\"id\":\"e_03\",\"role\":\"expert\",\"name\":\"陈默\",\"profession\":\"劳动经济学家\",\"title\":\"研究员\",\"stance\":\"AI 先替代任务，再压缩初级岗位数量\",\"stanceAxis\":\"岗位替代 vs 岗位重构\",\"polarity\":\"support\",\"color\":\"#C2673F\",\"focusArea\":\"就业结构与技能溢价\",\"sortOrder\":3},{\"id\":\"e_04\",\"role\":\"expert\",\"name\":\"苏芮\",\"profession\":\"创业公司 CTO\",\"title\":\"技术合伙人\",\"stance\":\"两年内初级招聘会明显收缩\",\"stanceAxis\":\"岗位替代 vs 岗位重构\",\"polarity\":\"strong_support\",\"color\":\"#7A8CA8\",\"focusArea\":\"团队成本与招聘节奏\",\"sortOrder\":4}]}"
     },
     {
-      "content": "{\"experts\":[{\"id\":\"e_host\",\"role\":\"host\",\"name\":\"主持人·林致远\",\"profession\":\"科技主持人\",\"title\":\"资深圆桌主持\",\"stance\":\"中立，负责开场、追问、串联与收尾\",\"stanceAxis\":\"岗位替代 vs 岗位重构\",\"polarity\":\"neutral\",\"color\":\"#E5E7EB\",\"focusArea\":\"节奏与议题边界\",\"sortOrder\":0},{\"id\":\"e_01\",\"role\":\"expert\",\"name\":\"周明\",\"profession\":\"软件工程师\",\"title\":\"技术负责人\",\"stance\":\"AI 会重构初级岗位，而不是简单消灭\",\"stanceAxis\":\"岗位替代 vs 岗位重构\",\"polarity\":\"oppose\",\"color\":\"#3E6FD9\",\"focusArea\":\"工程实践与岗位结构\",\"sortOrder\":1},{\"id\":\"e_02\",\"role\":\"expert\",\"name\":\"许澜\",\"profession\":\"组织心理学研究者\",\"title\":\"副教授\",\"stance\":\"岗位会被重组，但入行门槛会明显抬高\",\"stanceAxis\":\"岗位替代 vs 岗位重构\",\"polarity\":\"neutral\",\"color\":\"#2F8F8A\",\"focusArea\":\"组织行为与新人成长\",\"sortOrder\":2},{\"id\":\"e_03\",\"role\":\"expert\",\"name\":\"陈默\",\"profession\":\"劳动经济学家\",\"title\":\"研究员\",\"stance\":\"AI 先替代任务，再压缩初级岗位数量\",\"stanceAxis\":\"岗位替代 vs 岗位重构\",\"polarity\":\"support\",\"color\":\"#C2673F\",\"focusArea\":\"就业结构与技能溢价\",\"sortOrder\":3},{\"id\":\"e_04\",\"role\":\"expert\",\"name\":\"苏芮\",\"profession\":\"创业公司 CTO\",\"title\":\"技术合伙人\",\"stance\":\"两年内初级招聘会明显收缩\",\"stanceAxis\":\"岗位替代 vs 岗位重构\",\"polarity\":\"strong_support\",\"color\":\"#7A8CA8\",\"focusArea\":\"团队成本与招聘节奏\",\"sortOrder\":4}]}"
+      "content": "{\"experts\":[{\"id\":\"e_host\",\"role\":\"host\",\"name\":\"林致远\",\"profession\":\"科技主持人\",\"title\":\"资深圆桌主持\",\"stance\":\"中立，负责开场、追问、串联与收尾\",\"stanceAxis\":\"岗位替代 vs 岗位重构\",\"polarity\":\"neutral\",\"color\":\"#E5E7EB\",\"focusArea\":\"节奏与议题边界\",\"sortOrder\":0},{\"id\":\"e_01\",\"role\":\"expert\",\"name\":\"周明\",\"profession\":\"软件工程师\",\"title\":\"技术负责人\",\"stance\":\"AI 会重构初级岗位，而不是简单消灭\",\"stanceAxis\":\"岗位替代 vs 岗位重构\",\"polarity\":\"oppose\",\"color\":\"#3E6FD9\",\"focusArea\":\"工程实践与岗位结构\",\"sortOrder\":1},{\"id\":\"e_02\",\"role\":\"expert\",\"name\":\"许澜\",\"profession\":\"组织心理学研究者\",\"title\":\"副教授\",\"stance\":\"岗位会被重组，但入行门槛会明显抬高\",\"stanceAxis\":\"岗位替代 vs 岗位重构\",\"polarity\":\"neutral\",\"color\":\"#2F8F8A\",\"focusArea\":\"组织行为与新人成长\",\"sortOrder\":2},{\"id\":\"e_03\",\"role\":\"expert\",\"name\":\"陈默\",\"profession\":\"劳动经济学家\",\"title\":\"研究员\",\"stance\":\"AI 先替代任务，再压缩初级岗位数量\",\"stanceAxis\":\"岗位替代 vs 岗位重构\",\"polarity\":\"support\",\"color\":\"#C2673F\",\"focusArea\":\"就业结构与技能溢价\",\"sortOrder\":3},{\"id\":\"e_04\",\"role\":\"expert\",\"name\":\"苏芮\",\"profession\":\"创业公司 CTO\",\"title\":\"技术合伙人\",\"stance\":\"两年内初级招聘会明显收缩\",\"stanceAxis\":\"岗位替代 vs 岗位重构\",\"polarity\":\"strong_support\",\"color\":\"#7A8CA8\",\"focusArea\":\"团队成本与招聘节奏\",\"sortOrder\":4}]}"
     }
   ]
 }

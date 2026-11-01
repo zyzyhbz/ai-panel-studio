@@ -1,0 +1,19 @@
+{
+  "$schema": "qa/llm-fixture@1",
+  "negative": true,
+  "expectNotes": [
+    "UI 过 assertNoJsonLeak",
+    "必要时 isFallback=true"
+  ],
+  "onExhausted": "last",
+  "name": "summary/json-leak",
+  "kind": "summary",
+  "scenario": "invalid-json",
+  "description": "故意返回 JSON 原文，前端不得原样展示",
+  "expectOutcome": "degraded",
+  "steps": [
+    {
+      "content": "{\"consensus\":\"岗位会变化\",\"divergence\":\"升级还是压缩\",\"evidenceMessageIds\":[\"m_02\",\"m_03\"]}"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "$schema": "qa/llm-fixture@1",
+  "negative": false,
+  "expectNotes": [
+    "三区显示空态文案"
+  ],
+  "onExhausted": "last",
+  "name": "consensus/empty",
+  "kind": "consensus",
+  "scenario": "empty",
+  "description": "空数组（空态，不是错误）",
+  "expectOutcome": "ok",
+  "steps": [
+    {
+      "content": "{\"insights\":[]}"
+    }
+  ]
+}

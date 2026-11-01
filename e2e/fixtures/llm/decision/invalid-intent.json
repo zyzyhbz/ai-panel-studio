@@ -1,0 +1,21 @@
+{
+  "$schema": "qa/llm-fixture@1",
+  "negative": true,
+  "expectNotes": [
+    "Zod 校验失败 → 兜底 intent"
+  ],
+  "onExhausted": "last",
+  "name": "decision/invalid-intent",
+  "kind": "decision",
+  "scenario": "invalid-json",
+  "description": "intent 不在 9 种枚举内",
+  "expectOutcome": "abort_turn",
+  "steps": [
+    {
+      "content": "{\"speakerId\":\"e_01\",\"intent\":\"abc\",\"turnFocus\":\"非法意图\",\"messageId\":\"m_02\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_01\",\"intent\":\"extend\",\"turnFocus\":\"兜底\",\"messageId\":\"m_02\"}"
+    }
+  ]
+}

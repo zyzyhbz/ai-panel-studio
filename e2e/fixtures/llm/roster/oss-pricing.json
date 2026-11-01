@@ -1,20 +1,21 @@
 {
   "$schema": "qa/llm-fixture@1",
+  "negative": false,
+  "expectNotes": [
+    "颜色唯一",
+    "极性 >=3 类",
+    "姓名不重复",
+    "共 7 人"
+  ],
+  "onExhausted": "last",
   "name": "roster/oss-pricing",
   "kind": "roster",
   "scenario": "normal",
-  "negative": false,
-  "description": "议题「开源作者该不该向商业公司收费？」的主持人 + 6 位专家",
+  "description": "议题「开源作者该不该向商业公司收费？」：1 主持 + 6 专家",
   "expectOutcome": "ok",
-  "expectNotes": [
-    "颜色唯一",
-    "polarity 至少 3 类",
-    "1 主持 + 6 专家"
-  ],
-  "onExhausted": "last",
   "steps": [
     {
-      "content": "{\"experts\":[{\"id\":\"e_host\",\"role\":\"host\",\"name\":\"主持人·岑野\",\"profession\":\"技术社区主持\",\"title\":\"主理人\",\"stance\":\"中立，负责开场、追问、串联与收尾\",\"stanceAxis\":\"商业使用应付费 vs 许可证即边界\",\"polarity\":\"neutral\",\"color\":\"#E5E7EB\",\"focusArea\":\"节奏与议题边界\",\"sortOrder\":0},{\"id\":\"e_01\",\"role\":\"expert\",\"name\":\"谢临\",\"profession\":\"开源项目维护者\",\"title\":\"核心作者\",\"stance\":\"商业使用应当付费，否则维护不可持续\",\"stanceAxis\":\"商业使用应付费 vs 许可证即边界\",\"polarity\":\"strong_support\",\"color\":\"#3E6FD9\",\"focusArea\":\"维护成本与项目可持续\",\"sortOrder\":1},{\"id\":\"e_02\",\"role\":\"expert\",\"name\":\"孟舟\",\"profession\":\"律所合伙人\",\"title\":\"知识产权律师\",\"stance\":\"许可证已经是收费工具，不必另起炉灶\",\"stanceAxis\":\"商业使用应付费 vs 许可证即边界\",\"polarity\":\"oppose\",\"color\":\"#2F8F8A\",\"focusArea\":\"许可证边界与法律风险\",\"sortOrder\":2},{\"id\":\"e_03\",\"role\":\"expert\",\"name\":\"江砚\",\"profession\":\"云厂商开源负责人\",\"title\":\"总监\",\"stance\":\"付费应该买服务，不是买许可\",\"stanceAxis\":\"商业使用应付费 vs 许可证即边界\",\"polarity\":\"neutral\",\"color\":\"#C2673F\",\"focusArea\":\"云服务与商业模型\",\"sortOrder\":3},{\"id\":\"e_04\",\"role\":\"expert\",\"name\":\"童桦\",\"profession\":\"独立开发者\",\"title\":\"全栈工程师\",\"stance\":\"小作者收不到钱，大公司也不会付\",\"stanceAxis\":\"商业使用应付费 vs 许可证即边界\",\"polarity\":\"oppose\",\"color\":\"#7A8CA8\",\"focusArea\":\"个体作者的现实处境\",\"sortOrder\":4},{\"id\":\"e_05\",\"role\":\"expert\",\"name\":\"柏川\",\"profession\":\"基金会理事\",\"title\":\"执行董事\",\"stance\":\"基金会模式比逐笔收费更可行\",\"stanceAxis\":\"商业使用应付费 vs 许可证即边界\",\"polarity\":\"support\",\"color\":\"#9A6E4F\",\"focusArea\":\"治理结构与资金机制\",\"sortOrder\":5},{\"id\":\"e_06\",\"role\":\"expert\",\"name\":\"商屿\",\"profession\":\"企业采购负责人\",\"title\":\"技术总监\",\"stance\":\"付费可以，但要写清 SLA\",\"stanceAxis\":\"商业使用应付费 vs 许可证即边界\",\"polarity\":\"neutral\",\"color\":\"#5C7CFA\",\"focusArea\":\"采购合规与服务保障\",\"sortOrder\":6}]}"
+      "content": "{\"experts\":[{\"id\":\"e_host\",\"role\":\"host\",\"name\":\"岑野\",\"profession\":\"技术社区主持\",\"title\":\"主理人\",\"stance\":\"中立，负责开场、追问、串联与收尾\",\"stanceAxis\":\"商业使用应付费 vs 许可证即边界\",\"polarity\":\"neutral\",\"color\":\"#E5E7EB\",\"focusArea\":\"节奏与议题边界\",\"sortOrder\":0},{\"id\":\"e_01\",\"role\":\"expert\",\"name\":\"谢临\",\"profession\":\"开源项目维护者\",\"title\":\"核心作者\",\"stance\":\"商业使用应当付费，否则维护不可持续\",\"stanceAxis\":\"商业使用应付费 vs 许可证即边界\",\"polarity\":\"strong_support\",\"color\":\"#3E6FD9\",\"focusArea\":\"维护成本与项目可持续\",\"sortOrder\":1},{\"id\":\"e_02\",\"role\":\"expert\",\"name\":\"孟舟\",\"profession\":\"律所合伙人\",\"title\":\"知识产权律师\",\"stance\":\"许可证已经是收费工具，不必另起炉灶\",\"stanceAxis\":\"商业使用应付费 vs 许可证即边界\",\"polarity\":\"oppose\",\"color\":\"#2F8F8A\",\"focusArea\":\"许可证边界与法律风险\",\"sortOrder\":2},{\"id\":\"e_03\",\"role\":\"expert\",\"name\":\"江砚\",\"profession\":\"云厂商开源负责人\",\"title\":\"总监\",\"stance\":\"付费应该买服务，不是买许可\",\"stanceAxis\":\"商业使用应付费 vs 许可证即边界\",\"polarity\":\"neutral\",\"color\":\"#C2673F\",\"focusArea\":\"云服务与商业模型\",\"sortOrder\":3},{\"id\":\"e_04\",\"role\":\"expert\",\"name\":\"童桦\",\"profession\":\"独立开发者\",\"title\":\"全栈工程师\",\"stance\":\"小作者收不到钱，大公司也不会付\",\"stanceAxis\":\"商业使用应付费 vs 许可证即边界\",\"polarity\":\"oppose\",\"color\":\"#7A8CA8\",\"focusArea\":\"个体作者的现实处境\",\"sortOrder\":4},{\"id\":\"e_05\",\"role\":\"expert\",\"name\":\"柏川\",\"profession\":\"基金会理事\",\"title\":\"执行董事\",\"stance\":\"基金会模式比逐笔收费更可行\",\"stanceAxis\":\"商业使用应付费 vs 许可证即边界\",\"polarity\":\"support\",\"color\":\"#9A6E4F\",\"focusArea\":\"治理结构与资金机制\",\"sortOrder\":5},{\"id\":\"e_06\",\"role\":\"expert\",\"name\":\"商屿\",\"profession\":\"企业采购负责人\",\"title\":\"技术总监\",\"stance\":\"付费可以，但要写清 SLA\",\"stanceAxis\":\"商业使用应付费 vs 许可证即边界\",\"polarity\":\"neutral\",\"color\":\"#5C7CFA\",\"focusArea\":\"采购合规与服务保障\",\"sortOrder\":6}]}"
     }
   ]
 }

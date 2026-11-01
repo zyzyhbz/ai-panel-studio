@@ -1,0 +1,19 @@
+{
+  "$schema": "qa/llm-fixture@1",
+  "negative": false,
+  "expectNotes": [
+    "不含 JSON 字段名",
+    "长度 >20"
+  ],
+  "onExhausted": "last",
+  "name": "summary/normal",
+  "kind": "summary",
+  "scenario": "normal",
+  "description": "自然语言总结，覆盖共识/分歧/未决",
+  "expectOutcome": "ok",
+  "steps": [
+    {
+      "content": "{\"content\":\"这场讨论的共识是：初级岗位的职责边界会变化，而不是原样保留。主要分歧在于变化是能力升级还是岗位压缩；尚未解决的是企业是否愿意为再培训买单，以及中小企业真实招聘会收缩到什么程度。\",\"isFallback\":false}"
+    }
+  ]
+}

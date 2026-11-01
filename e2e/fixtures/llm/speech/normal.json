@@ -1,0 +1,31 @@
+{
+  "$schema": "qa/llm-fixture@1",
+  "negative": false,
+  "expectNotes": [
+    "charCount <=120",
+    "句数 <=2"
+  ],
+  "onExhausted": "loop",
+  "name": "speech/normal",
+  "kind": "speech",
+  "scenario": "normal",
+  "description": "每轮 1–2 句、<=120 码点",
+  "expectOutcome": "ok",
+  "steps": [
+    {
+      "content": "我不太同意把问题简化成替代。真正发生的是任务被拆开，人还在，但岗位定义变了。"
+    },
+    {
+      "content": "补一个角度：企业愿不愿意为再培训买单，决定了岗位是升级还是压缩。"
+    },
+    {
+      "content": "这件事短期看成本，长期看的是组织能力能不能跟上。"
+    },
+    {
+      "content": "我同意一半。方向没错，但把责任全推给个人，忽略了过去三年的招聘结构变化。"
+    },
+    {
+      "content": "数据上更微妙：招聘量下降和岗位消失不是一回事，前者会先出现。"
+    }
+  ]
+}

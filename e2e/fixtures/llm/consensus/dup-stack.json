@@ -1,0 +1,18 @@
+{
+  "$schema": "qa/llm-fixture@1",
+  "negative": true,
+  "expectNotes": [
+    "相同 content 去重后 <=1 条"
+  ],
+  "onExhausted": "last",
+  "name": "consensus/dup-stack",
+  "kind": "consensus",
+  "scenario": "duplicate",
+  "description": "同一结论重复 5 条（测不堆叠）",
+  "expectOutcome": "degraded",
+  "steps": [
+    {
+      "content": "{\"insights\":[{\"id\":\"i_10\",\"type\":\"consensus\",\"content\":\"岗位会变化\",\"evidenceMessageIds\":[\"m_02\"],\"firstSeenTurn\":4},{\"id\":\"i_11\",\"type\":\"consensus\",\"content\":\"岗位会变化\",\"evidenceMessageIds\":[\"m_02\"],\"firstSeenTurn\":4},{\"id\":\"i_12\",\"type\":\"consensus\",\"content\":\"岗位会变化\",\"evidenceMessageIds\":[\"m_02\"],\"firstSeenTurn\":4},{\"id\":\"i_13\",\"type\":\"consensus\",\"content\":\"岗位会变化\",\"evidenceMessageIds\":[\"m_02\"],\"firstSeenTurn\":4},{\"id\":\"i_14\",\"type\":\"consensus\",\"content\":\"岗位会变化\",\"evidenceMessageIds\":[\"m_02\"],\"firstSeenTurn\":4}]}"
+    }
+  ]
+}

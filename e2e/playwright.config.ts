@@ -1,3 +1,4 @@
+import path from "node:path";
 import { defineConfig } from "@playwright/test";
 import { env } from "./helpers/env";
 
@@ -10,14 +11,17 @@ import { env } from "./helpers/env";
  * 设计要点：
  * 1. 用本机已安装的 Chrome（channel=chrome），不下载 Playwright 浏览器。
  * 2. baseURL 可用 E2E_BASE_URL 覆盖；API 用 E2E_API_URL（默认直连 3001，绕开 Vite 代理）。
- * 3. 默认不启动 webServer：G2 期间前后端可能未就绪，由 E2E_WEB_SERVER=1 显式开启。
+ * 3. webServer 由 E2E_WEBSERVER_CMD 控制；默认认为服务已由外部启动。
  * 4. workers=1：后端是单进程 + 单 SQLite，并行会互相污染状态。
- * 5. 所有产物写到 e2e/.artifacts（已 gitignore），失败保留 trace + 截图。
+ * 5. **产物目录必须是纯 ASCII 绝对路径**（%TEMP%\ai-panel-e2e）：
+ *    仓库路径含中文时，trace 写盘会在 cp936 拼接处 ENOENT，导致"不是断言的失败"。
  */
+const ARTIFACTS = env.artifactsDir;
+
 export default defineConfig({
   testDir: "./specs",
   globalSetup: "./global-setup.ts",
-  outputDir: "./.artifacts/test-results",
+  outputDir: path.join(ARTIFACTS, "test-results"),
   fullyParallel: false,
   workers: 1,
   retries: 0,
@@ -26,8 +30,8 @@ export default defineConfig({
   forbidOnly: env.ci,
   reporter: [
     ["list"],
-    ["json", { outputFile: "./.artifacts/results.json" }],
-    ["html", { outputFolder: "./.artifacts/report", open: "never" }],
+    ["json", { outputFile: path.join(ARTIFACTS, "results.json") }],
+    ["html", { outputFolder: path.join(ARTIFACTS, "report"), open: "never" }],
   ],
   use: {
     baseURL: env.baseURL,
@@ -50,6 +54,21 @@ export default defineConfig({
       use: { channel: "chrome" },
     },
   ],
-  // 不配 webServer：本机 dev 服务需用 .\scripts\pnpm.ps1 dev 手动启动（Node 24 + 清代理），
-  // 由 Playwright 代起会用到错误 node。E2E_STRICT=1 时若应用不可达会直接失败，不会静默跳过。
+  // webServer 由环境变量控制：
+  //   $env:E2E_WEBSERVER_CMD=".\scripts\pnpm.ps1 dev"; playwright test
+  // 不设时默认"外部已起服务"，避免 Playwright 用错 node 起进程。
+  // E2E_STRICT=1 时应用不可达会直接失败，不会静默跳过。
+  webServer: process.env.E2E_WEBSERVER_CMD
+    ? [
+        {
+          command: process.env.E2E_WEBSERVER_CMD,
+          url: env.baseURL,
+          cwd: env.repoRoot,
+          reuseExistingServer: true,
+          timeout: 120_000,
+          stdout: "pipe",
+          stderr: "pipe",
+        },
+      ]
+    : undefined,
 });

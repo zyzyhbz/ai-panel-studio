@@ -1,0 +1,25 @@
+{
+  "$schema": "qa/llm-fixture@1",
+  "negative": true,
+  "expectNotes": [
+    "内容去重或换人",
+    "不得出现 3 条相同文本"
+  ],
+  "onExhausted": "last",
+  "name": "speech/duplicate",
+  "kind": "speech",
+  "scenario": "duplicate",
+  "description": "连续 3 条完全相同内容",
+  "expectOutcome": "degraded",
+  "steps": [
+    {
+      "content": "AI 会替代初级岗位。"
+    },
+    {
+      "content": "AI 会替代初级岗位。"
+    },
+    {
+      "content": "AI 会替代初级岗位。"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "qa/llm-fixture@1",
+  "negative": true,
+  "expectNotes": [
+    "截断或重试到 <=120",
+    "degraded=true"
+  ],
+  "onExhausted": "last",
+  "name": "speech/long",
+  "kind": "speech",
+  "scenario": "long",
+  "description": "约 180 码点的超长发言（上限 120）",
+  "expectOutcome": "degraded",
+  "steps": [
+    {
+      "content": "这是一个非常长的小作文式发言，这是一个非常长的小作文式发言，这是一个非常长的小作文式发言，这是一个非常长的小作文式发言，这是一个非常长的小作文式发言，这是一个非常长的小作文式发言，这是一个非常长的小作文式发言，这是一个非常长的小作文式发言，这是一个非常长的小作文式发言，这是一个非常长的小作文式发言，这是一个非常长的小作文式发言，这是一个非常长的小作文式发言，"
+    }
+  ]
+}

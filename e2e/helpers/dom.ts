@@ -39,7 +39,7 @@ export async function normalizeTranscript(page: Page): Promise<TranscriptEntry[]
   const entries = await page.$$eval(
     SEL.transcriptItem,
     (els, src) => {
-      const fn = new Function("return " + src)();
+      const fn = new Function("return (" + src + ");")();
       return els.map((el) => {
         const node = el as HTMLElement;
         const seqRaw = node.getAttribute("data-seq");
@@ -82,7 +82,7 @@ export async function normalizeExperts(page: Page): Promise<ExpertEntry[]> {
   return page.$$eval(
     SEL.expertCard,
     (els, src) => {
-      const fn = new Function("return " + src)();
+      const fn = new Function("return (" + src + ");")();
       return els.map((el) => {
         const node = el as HTMLElement;
         const colorAttr = node.getAttribute("data-color");
@@ -122,7 +122,7 @@ export async function normalizeInsights(page: Page): Promise<{
   const all = await page.$$eval(
     SEL.insightItem,
     (els, src) => {
-      const fn = new Function("return " + src)();
+      const fn = new Function("return (" + src + ");")();
       const types = ["consensus", "divergence", "open_question"];
       return els.map((el) => {
         const node = el as HTMLElement;

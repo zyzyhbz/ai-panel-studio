@@ -1,0 +1,19 @@
+{
+  "$schema": "qa/llm-fixture@1",
+  "negative": true,
+  "expectNotes": [
+    "必须降级为 open_question 或丢弃",
+    "不得进入共识区"
+  ],
+  "onExhausted": "last",
+  "name": "consensus/unsupported",
+  "kind": "consensus",
+  "scenario": "duplicate",
+  "description": "consensus 无 evidenceMessageIds（编造一致）",
+  "expectOutcome": "degraded",
+  "steps": [
+    {
+      "content": "{\"insights\":[{\"id\":\"i_09\",\"type\":\"consensus\",\"content\":\"大家都认为 AI 没有影响\",\"evidenceMessageIds\":[],\"firstSeenTurn\":4}]}"
+    }
+  ]
+}

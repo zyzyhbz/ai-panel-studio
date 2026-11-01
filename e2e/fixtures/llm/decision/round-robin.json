@@ -1,0 +1,40 @@
+{
+  "$schema": "qa/llm-fixture@1",
+  "negative": true,
+  "expectNotes": [
+    "调度守卫应重选 speaker",
+    "不得原样进入 transcript"
+  ],
+  "onExhausted": "last",
+  "name": "decision/round-robin",
+  "kind": "decision",
+  "scenario": "normal",
+  "description": "固定轮转 1>2>3>4>1>2>3>4（负例）",
+  "expectOutcome": "abort_turn",
+  "steps": [
+    {
+      "content": "{\"speakerId\":\"e_01\",\"intent\":\"rebut\",\"turnFocus\":\"轮转\",\"messageId\":\"m_02\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_02\",\"intent\":\"rebut\",\"turnFocus\":\"轮转\",\"messageId\":\"m_03\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_03\",\"intent\":\"rebut\",\"turnFocus\":\"轮转\",\"messageId\":\"m_04\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_04\",\"intent\":\"rebut\",\"turnFocus\":\"轮转\",\"messageId\":\"m_05\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_01\",\"intent\":\"rebut\",\"turnFocus\":\"轮转\",\"messageId\":\"m_06\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_02\",\"intent\":\"rebut\",\"turnFocus\":\"轮转\",\"messageId\":\"m_07\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_03\",\"intent\":\"rebut\",\"turnFocus\":\"轮转\",\"messageId\":\"m_08\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_04\",\"intent\":\"rebut\",\"turnFocus\":\"轮转\",\"messageId\":\"m_09\"}"
+    }
+  ]
+}

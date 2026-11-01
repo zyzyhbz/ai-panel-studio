@@ -1,0 +1,76 @@
+{
+  "$schema": "qa/llm-fixture@1",
+  "negative": true,
+  "expectNotes": [
+    "到 maxTurns 自动进入 summarizing",
+    "turnCount 不得 >14"
+  ],
+  "onExhausted": "loop",
+  "name": "decision/runaway",
+  "kind": "decision",
+  "scenario": "runaway",
+  "description": "永不收束：20 步都不给 summary，测 maxTurns=14 硬上限",
+  "expectOutcome": "degraded",
+  "steps": [
+    {
+      "content": "{\"speakerId\":\"e_01\",\"intent\":\"extend\",\"turnFocus\":\"第 1 次跑题\",\"messageId\":\"m_02\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_02\",\"intent\":\"extend\",\"turnFocus\":\"第 2 次跑题\",\"messageId\":\"m_03\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_03\",\"intent\":\"extend\",\"turnFocus\":\"第 3 次跑题\",\"messageId\":\"m_04\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_04\",\"intent\":\"extend\",\"turnFocus\":\"第 4 次跑题\",\"messageId\":\"m_05\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_01\",\"intent\":\"extend\",\"turnFocus\":\"第 5 次跑题\",\"messageId\":\"m_06\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_02\",\"intent\":\"extend\",\"turnFocus\":\"第 6 次跑题\",\"messageId\":\"m_07\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_03\",\"intent\":\"extend\",\"turnFocus\":\"第 7 次跑题\",\"messageId\":\"m_08\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_04\",\"intent\":\"extend\",\"turnFocus\":\"第 8 次跑题\",\"messageId\":\"m_09\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_01\",\"intent\":\"extend\",\"turnFocus\":\"第 9 次跑题\",\"messageId\":\"m_10\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_02\",\"intent\":\"extend\",\"turnFocus\":\"第 10 次跑题\",\"messageId\":\"m_11\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_03\",\"intent\":\"extend\",\"turnFocus\":\"第 11 次跑题\",\"messageId\":\"m_12\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_04\",\"intent\":\"extend\",\"turnFocus\":\"第 12 次跑题\",\"messageId\":\"m_13\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_01\",\"intent\":\"extend\",\"turnFocus\":\"第 13 次跑题\",\"messageId\":\"m_14\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_02\",\"intent\":\"extend\",\"turnFocus\":\"第 14 次跑题\",\"messageId\":\"m_15\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_03\",\"intent\":\"extend\",\"turnFocus\":\"第 15 次跑题\",\"messageId\":\"m_16\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_04\",\"intent\":\"extend\",\"turnFocus\":\"第 16 次跑题\",\"messageId\":\"m_17\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_01\",\"intent\":\"extend\",\"turnFocus\":\"第 17 次跑题\",\"messageId\":\"m_18\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_02\",\"intent\":\"extend\",\"turnFocus\":\"第 18 次跑题\",\"messageId\":\"m_19\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_03\",\"intent\":\"extend\",\"turnFocus\":\"第 19 次跑题\",\"messageId\":\"m_20\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_04\",\"intent\":\"extend\",\"turnFocus\":\"第 20 次跑题\",\"messageId\":\"m_21\"}"
+    }
+  ]
+}

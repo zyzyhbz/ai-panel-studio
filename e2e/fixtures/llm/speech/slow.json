@@ -1,0 +1,23 @@
+{
+  "$schema": "qa/llm-fixture@1",
+  "negative": false,
+  "expectNotes": [
+    "首字前有准备态",
+    "不白屏"
+  ],
+  "onExhausted": "loop",
+  "name": "speech/slow",
+  "kind": "speech",
+  "scenario": "slow",
+  "description": "首字 3s、delta 间隔 800ms",
+  "expectOutcome": "ok",
+  "steps": [
+    {
+      "content": "我需要先确认一个前提：讨论的是岗位数量，还是岗位内容？",
+      "timing": {
+        "firstTokenDelayMs": 3000,
+        "interDeltaMs": 800
+      }
+    }
+  ]
+}
