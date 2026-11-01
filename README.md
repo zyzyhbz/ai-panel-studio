@@ -2,6 +2,8 @@
 
 > 一场由 AI 驱动、实时推进的圆桌讨论。输入议题，生成主持人与立场互补的专家，观看观点碰撞、实时共识/分歧，并完整回放。
 
+仓库：https://github.com/zyzyhbz/ai-panel-studio（Public）
+
 ## 状态
 
 **G2 完成，RC 候选**。主链路、UI、E2E、真实 DeepSeek smoke 均已跑通。
