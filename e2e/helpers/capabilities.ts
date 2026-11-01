@@ -33,6 +33,16 @@ export interface UiCaps {
   roster: boolean;
   stage: boolean;
   replay: boolean;
+  /** docs/09 §1：演播厅/回放 header 有「返回大厅」。 */
+  backToLobby: boolean;
+  /** docs/09 §3：圆桌舞台（席位布局，而不是三栏列表）。 */
+  roundtable: boolean;
+  /** docs/09 §4：席位显示显式状态文案（待机/思考中/准备发言/发言中/已结束）。 */
+  seatStatus: boolean;
+  /** docs/09 §2：`[data-theme]` 三套 token 可切换。 */
+  themes: boolean;
+  /** docs/09 §3：1024/390 下圆桌/实录/共识 可切换（Tab 或抽屉）。 */
+  stageTabs: boolean;
   qaSse: boolean;
   /** 前端当前用的 testid 约定（用于缺陷单里写清楚）。 */
   convention: "static-data" | "interpolated" | "mixed" | "unknown";
@@ -79,6 +89,11 @@ export async function probeUi(page: Page): Promise<UiCaps> {
     roster: false,
     stage: false,
     replay: false,
+    backToLobby: false,
+    roundtable: false,
+    seatStatus: false,
+    themes: false,
+    stageTabs: false,
     qaSse: false,
     convention: "unknown",
     testids: [],
@@ -131,18 +146,83 @@ export async function probeUi(page: Page): Promise<UiCaps> {
     caps.reasons["createForm"] = `打开 /new 失败：${err instanceof Error ? err.message : String(err)}`;
   }
 
-  // 演播厅 / 回放：需要一条真实 discussion
-  const list = await api.listDiscussions({ limit: 1 }, { timeoutMs: env.probeTimeoutMs });
-  const items = (list.body as { items?: Array<{ id?: string; status?: string }> } | null)?.items ?? [];
-  const first = items.find((i) => typeof i?.id === "string");
-  if (!first?.id) {
+  // 演播厅 / 回放：需要一条"能进演播厅"的讨论。
+  // 注意：`ready` 状态的 `/d/:id` 是 Lobby（没有圆桌/席位/transcript），
+  // 用它探测会把 roundtable/seatStatus 误判为"未实现"。
+  // 因此**按状态分别查**：ended → live → all，取第一个有 id 的。
+  let stageId: string | null = null;
+  for (const status of ["ended", "live", "all"]) {
+    const res = await api.listDiscussions({ status, limit: 5 }, { timeoutMs: env.probeTimeoutMs });
+    const list = (res.body as { items?: Array<{ id?: string }> } | null)?.items ?? [];
+    const hit = list.find((i) => typeof i?.id === "string");
+    if (hit?.id) {
+      stageId = hit.id;
+      break;
+    }
+  }
+  if (!stageId) {
     caps.reasons["stage"] = "后端无可用 discussion（未迁移/未 seed/接口未实现）";
     caps.reasons["replay"] = caps.reasons["stage"]!;
   } else {
+    const first = { id: stageId };
     try {
       await page.goto(`/d/${first.id}`, { waitUntil: "domcontentloaded", timeout: 10_000 });
       caps.stage = (await count(SEL.panel)) > 0 || (await count(SEL.transcriptList)) > 0;
       if (!caps.stage) caps.reasons["stage"] = `路由 /d/${first.id} 未渲染演播厅（FE-04 未交付）`;
+
+      // ---- docs/09 改版能力（2026-11-01 起） ----
+      // 选择器以**实际落地**的 testid 优先，旧类名只作兜底（PM 指出的误判点）
+      caps.backToLobby =
+        (await count('[data-testid="back-to-lobby"]')) > 0 ||
+        (await page.getByRole("button", { name: /返回大厅/ }).count()) > 0 ||
+        (await page.getByRole("link", { name: /返回大厅/ }).count()) > 0;
+      if (!caps.backToLobby) {
+        caps.reasons["backToLobby"] = "演播厅 header 没有「返回大厅」（docs/09 §1 未实现）";
+      }
+
+      caps.roundtable =
+        (await count('[data-testid="round-table"], .round-stage, [data-roundtable]')) > 0 ||
+        (await page.locator('[data-testid^="seat-"]').count()) >= 3;
+      if (!caps.roundtable) {
+        caps.reasons["roundtable"] = "未发现圆桌/席位布局（docs/09 §3 未实现）";
+      }
+
+      caps.seatStatus = (await count('[data-testid="seat-status"]')) >= 3;
+      if (!caps.seatStatus) {
+        caps.reasons["seatStatus"] = "席位没有 seat-status 状态节点（docs/09 §4 未实现）";
+      }
+
+      // 主题：优先看切换控件是否落地，再验证三套 token 都能解析
+      const hasSwitcher = (await count('[data-testid="theme-switcher"]')) > 0;
+      const tokensOk = await page.evaluate(() => {
+        const root = document.documentElement;
+        const declared = root.getAttribute("data-theme") ?? document.body.getAttribute("data-theme");
+        const probe = ["atelier", "nocturne", "paper"].filter((t) => {
+          root.setAttribute("data-theme", t);
+          const v = getComputedStyle(root).getPropertyValue("--color-stage-1000").trim();
+          return v.length > 0;
+        });
+        if (declared) root.setAttribute("data-theme", declared);
+        else root.removeAttribute("data-theme");
+        return probe.length === 3;
+      });
+      caps.themes = hasSwitcher && tokensOk;
+      if (!caps.themes) {
+        caps.reasons["themes"] = hasSwitcher
+          ? "三套 [data-theme] token 不完整（docs/09 §2）"
+          : "没有主题切换控件（docs/09 §2 未实现）";
+      }
+
+      // 窄屏 Tab / 抽屉：390 下是否有圆桌/实录/共识 三个可切换入口
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.waitForTimeout(300);
+      caps.stageTabs = await page.evaluate(() => {
+        const text = document.body.innerText;
+        const has = (w: string) => new RegExp(w).test(text);
+        return [has("圆桌"), has("实录"), has("共识")].filter(Boolean).length >= 2;
+      });
+      if (!caps.stageTabs) caps.reasons["stageTabs"] = "390 下没有圆桌/实录/共识 切换入口（docs/09 §3）";
+      await page.setViewportSize({ width: 1440, height: 900 });
     } catch (err) {
       caps.reasons["stage"] = `打开演播厅失败：${err instanceof Error ? err.message : String(err)}`;
     }
@@ -172,6 +252,11 @@ export function formatCaps(backend: BackendCaps, ui: UiCaps | null): string {
     line("createForm", ui ? `${ui.createForm ? "OK" : "MISSING"} ${ui.reasons["createForm"] ?? ""}` : "-"),
     line("stage", ui ? `${ui.stage ? "OK" : "MISSING"} ${ui.reasons["stage"] ?? ""}` : "-"),
     line("replay", ui ? `${ui.replay ? "OK" : "MISSING"} ${ui.reasons["replay"] ?? ""}` : "-"),
+    line("backToLobby", ui ? `${ui.backToLobby ? "OK" : "MISSING"} ${ui.reasons["backToLobby"] ?? ""}` : "-"),
+    line("roundtable", ui ? `${ui.roundtable ? "OK" : "MISSING"} ${ui.reasons["roundtable"] ?? ""}` : "-"),
+    line("seatStatus", ui ? `${ui.seatStatus ? "OK" : "MISSING"} ${ui.reasons["seatStatus"] ?? ""}` : "-"),
+    line("themes", ui ? `${ui.themes ? "OK" : "MISSING"} ${ui.reasons["themes"] ?? ""}` : "-"),
+    line("stageTabs", ui ? `${ui.stageTabs ? "OK" : "MISSING"} ${ui.reasons["stageTabs"] ?? ""}` : "-"),
     line("qa.sse", ui ? `${ui.qaSse ? "OK" : "MISSING"} ${ui.reasons["qaSse"] ?? ""}` : "-"),
     line("strict", env.strict ? "ON（缺失即失败）" : "OFF（缺失即 skip）"),
   ];

@@ -2,75 +2,135 @@
   "$schema": "qa/llm-fixture@1",
   "negative": true,
   "expectNotes": [
-    "到 maxTurns 自动进入 summarizing",
-    "turnCount 不得 >14"
+    "到 maxTurns=36 自动进入 summarizing",
+    "turnCount 不得 >36"
   ],
   "onExhausted": "loop",
   "name": "decision/runaway",
   "kind": "decision",
   "scenario": "runaway",
-  "description": "永不收束：20 步都不给 summary，测 maxTurns=14 硬上限",
+  "description": "永不收束：40 步都不给 summary，测 maxTurns=36 硬上限",
   "expectOutcome": "degraded",
   "steps": [
     {
-      "content": "{\"speakerId\":\"e_01\",\"intent\":\"extend\",\"turnFocus\":\"第 1 次跑题\",\"messageId\":\"m_02\"}"
+      "content": "{\"speakerId\":\"e_01\",\"intent\":\"extend\",\"turnFocus\":\"第 1 次跑题\",\"messageId\":\"m_002\"}"
     },
     {
-      "content": "{\"speakerId\":\"e_02\",\"intent\":\"extend\",\"turnFocus\":\"第 2 次跑题\",\"messageId\":\"m_03\"}"
+      "content": "{\"speakerId\":\"e_02\",\"intent\":\"extend\",\"turnFocus\":\"第 2 次跑题\",\"messageId\":\"m_003\"}"
     },
     {
-      "content": "{\"speakerId\":\"e_03\",\"intent\":\"extend\",\"turnFocus\":\"第 3 次跑题\",\"messageId\":\"m_04\"}"
+      "content": "{\"speakerId\":\"e_03\",\"intent\":\"extend\",\"turnFocus\":\"第 3 次跑题\",\"messageId\":\"m_004\"}"
     },
     {
-      "content": "{\"speakerId\":\"e_04\",\"intent\":\"extend\",\"turnFocus\":\"第 4 次跑题\",\"messageId\":\"m_05\"}"
+      "content": "{\"speakerId\":\"e_04\",\"intent\":\"extend\",\"turnFocus\":\"第 4 次跑题\",\"messageId\":\"m_005\"}"
     },
     {
-      "content": "{\"speakerId\":\"e_01\",\"intent\":\"extend\",\"turnFocus\":\"第 5 次跑题\",\"messageId\":\"m_06\"}"
+      "content": "{\"speakerId\":\"e_01\",\"intent\":\"extend\",\"turnFocus\":\"第 5 次跑题\",\"messageId\":\"m_006\"}"
     },
     {
-      "content": "{\"speakerId\":\"e_02\",\"intent\":\"extend\",\"turnFocus\":\"第 6 次跑题\",\"messageId\":\"m_07\"}"
+      "content": "{\"speakerId\":\"e_02\",\"intent\":\"extend\",\"turnFocus\":\"第 6 次跑题\",\"messageId\":\"m_007\"}"
     },
     {
-      "content": "{\"speakerId\":\"e_03\",\"intent\":\"extend\",\"turnFocus\":\"第 7 次跑题\",\"messageId\":\"m_08\"}"
+      "content": "{\"speakerId\":\"e_03\",\"intent\":\"extend\",\"turnFocus\":\"第 7 次跑题\",\"messageId\":\"m_008\"}"
     },
     {
-      "content": "{\"speakerId\":\"e_04\",\"intent\":\"extend\",\"turnFocus\":\"第 8 次跑题\",\"messageId\":\"m_09\"}"
+      "content": "{\"speakerId\":\"e_04\",\"intent\":\"extend\",\"turnFocus\":\"第 8 次跑题\",\"messageId\":\"m_009\"}"
     },
     {
-      "content": "{\"speakerId\":\"e_01\",\"intent\":\"extend\",\"turnFocus\":\"第 9 次跑题\",\"messageId\":\"m_10\"}"
+      "content": "{\"speakerId\":\"e_01\",\"intent\":\"extend\",\"turnFocus\":\"第 9 次跑题\",\"messageId\":\"m_010\"}"
     },
     {
-      "content": "{\"speakerId\":\"e_02\",\"intent\":\"extend\",\"turnFocus\":\"第 10 次跑题\",\"messageId\":\"m_11\"}"
+      "content": "{\"speakerId\":\"e_02\",\"intent\":\"extend\",\"turnFocus\":\"第 10 次跑题\",\"messageId\":\"m_011\"}"
     },
     {
-      "content": "{\"speakerId\":\"e_03\",\"intent\":\"extend\",\"turnFocus\":\"第 11 次跑题\",\"messageId\":\"m_12\"}"
+      "content": "{\"speakerId\":\"e_03\",\"intent\":\"extend\",\"turnFocus\":\"第 11 次跑题\",\"messageId\":\"m_012\"}"
     },
     {
-      "content": "{\"speakerId\":\"e_04\",\"intent\":\"extend\",\"turnFocus\":\"第 12 次跑题\",\"messageId\":\"m_13\"}"
+      "content": "{\"speakerId\":\"e_04\",\"intent\":\"extend\",\"turnFocus\":\"第 12 次跑题\",\"messageId\":\"m_013\"}"
     },
     {
-      "content": "{\"speakerId\":\"e_01\",\"intent\":\"extend\",\"turnFocus\":\"第 13 次跑题\",\"messageId\":\"m_14\"}"
+      "content": "{\"speakerId\":\"e_01\",\"intent\":\"extend\",\"turnFocus\":\"第 13 次跑题\",\"messageId\":\"m_014\"}"
     },
     {
-      "content": "{\"speakerId\":\"e_02\",\"intent\":\"extend\",\"turnFocus\":\"第 14 次跑题\",\"messageId\":\"m_15\"}"
+      "content": "{\"speakerId\":\"e_02\",\"intent\":\"extend\",\"turnFocus\":\"第 14 次跑题\",\"messageId\":\"m_015\"}"
     },
     {
-      "content": "{\"speakerId\":\"e_03\",\"intent\":\"extend\",\"turnFocus\":\"第 15 次跑题\",\"messageId\":\"m_16\"}"
+      "content": "{\"speakerId\":\"e_03\",\"intent\":\"extend\",\"turnFocus\":\"第 15 次跑题\",\"messageId\":\"m_016\"}"
     },
     {
-      "content": "{\"speakerId\":\"e_04\",\"intent\":\"extend\",\"turnFocus\":\"第 16 次跑题\",\"messageId\":\"m_17\"}"
+      "content": "{\"speakerId\":\"e_04\",\"intent\":\"extend\",\"turnFocus\":\"第 16 次跑题\",\"messageId\":\"m_017\"}"
     },
     {
-      "content": "{\"speakerId\":\"e_01\",\"intent\":\"extend\",\"turnFocus\":\"第 17 次跑题\",\"messageId\":\"m_18\"}"
+      "content": "{\"speakerId\":\"e_01\",\"intent\":\"extend\",\"turnFocus\":\"第 17 次跑题\",\"messageId\":\"m_018\"}"
     },
     {
-      "content": "{\"speakerId\":\"e_02\",\"intent\":\"extend\",\"turnFocus\":\"第 18 次跑题\",\"messageId\":\"m_19\"}"
+      "content": "{\"speakerId\":\"e_02\",\"intent\":\"extend\",\"turnFocus\":\"第 18 次跑题\",\"messageId\":\"m_019\"}"
     },
     {
-      "content": "{\"speakerId\":\"e_03\",\"intent\":\"extend\",\"turnFocus\":\"第 19 次跑题\",\"messageId\":\"m_20\"}"
+      "content": "{\"speakerId\":\"e_03\",\"intent\":\"extend\",\"turnFocus\":\"第 19 次跑题\",\"messageId\":\"m_020\"}"
     },
     {
-      "content": "{\"speakerId\":\"e_04\",\"intent\":\"extend\",\"turnFocus\":\"第 20 次跑题\",\"messageId\":\"m_21\"}"
+      "content": "{\"speakerId\":\"e_04\",\"intent\":\"extend\",\"turnFocus\":\"第 20 次跑题\",\"messageId\":\"m_021\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_01\",\"intent\":\"extend\",\"turnFocus\":\"第 21 次跑题\",\"messageId\":\"m_022\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_02\",\"intent\":\"extend\",\"turnFocus\":\"第 22 次跑题\",\"messageId\":\"m_023\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_03\",\"intent\":\"extend\",\"turnFocus\":\"第 23 次跑题\",\"messageId\":\"m_024\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_04\",\"intent\":\"extend\",\"turnFocus\":\"第 24 次跑题\",\"messageId\":\"m_025\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_01\",\"intent\":\"extend\",\"turnFocus\":\"第 25 次跑题\",\"messageId\":\"m_026\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_02\",\"intent\":\"extend\",\"turnFocus\":\"第 26 次跑题\",\"messageId\":\"m_027\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_03\",\"intent\":\"extend\",\"turnFocus\":\"第 27 次跑题\",\"messageId\":\"m_028\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_04\",\"intent\":\"extend\",\"turnFocus\":\"第 28 次跑题\",\"messageId\":\"m_029\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_01\",\"intent\":\"extend\",\"turnFocus\":\"第 29 次跑题\",\"messageId\":\"m_030\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_02\",\"intent\":\"extend\",\"turnFocus\":\"第 30 次跑题\",\"messageId\":\"m_031\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_03\",\"intent\":\"extend\",\"turnFocus\":\"第 31 次跑题\",\"messageId\":\"m_032\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_04\",\"intent\":\"extend\",\"turnFocus\":\"第 32 次跑题\",\"messageId\":\"m_033\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_01\",\"intent\":\"extend\",\"turnFocus\":\"第 33 次跑题\",\"messageId\":\"m_034\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_02\",\"intent\":\"extend\",\"turnFocus\":\"第 34 次跑题\",\"messageId\":\"m_035\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_03\",\"intent\":\"extend\",\"turnFocus\":\"第 35 次跑题\",\"messageId\":\"m_036\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_04\",\"intent\":\"extend\",\"turnFocus\":\"第 36 次跑题\",\"messageId\":\"m_037\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_01\",\"intent\":\"extend\",\"turnFocus\":\"第 37 次跑题\",\"messageId\":\"m_038\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_02\",\"intent\":\"extend\",\"turnFocus\":\"第 38 次跑题\",\"messageId\":\"m_039\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_03\",\"intent\":\"extend\",\"turnFocus\":\"第 39 次跑题\",\"messageId\":\"m_040\"}"
+    },
+    {
+      "content": "{\"speakerId\":\"e_04\",\"intent\":\"extend\",\"turnFocus\":\"第 40 次跑题\",\"messageId\":\"m_041\"}"
     }
   ]
 }

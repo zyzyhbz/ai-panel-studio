@@ -5,24 +5,29 @@ import { normalizeTranscript, pageOverflow } from "../helpers/dom";
 import { api } from "../helpers/api";
 
 /**
- * 布局回归：演播厅三栏（rail / stage / insights）。
+ * 布局回归：改版后的演播厅三区（docs/09 §3）。
  *
- * 背景（2026-11-01 真实缺陷，已修）：`styles.css` 里三栏子项都只有 `grid-area: stage`，
- * 1440 下三栏重叠成一列，页面上只剩 InsightPanel 可见。
- * 本 spec 把"三栏必须真的并排、且不整体滚动"固化成回归用例。
- *
- * 选择器用 `.studio-rail/.studio-stage/.studio-insights`，同时兼容 `[data-panel]`。
+ * 历史：
+ * - 2026-11-01 上午：`.studio-rail/.studio-stage/.studio-insights` 三栏子项都写成
+ *   `grid-area: stage`，1440 下三栏重叠、只剩 InsightPanel 可见 → 修复后加回归。
+ * - 2026-11-01 下午改版：演播厅改为「现场实录 | 圆桌舞台 | 共识」三区，
+ *   容器换成 `[data-testid="transcript"]` / `round-table` / 右侧洞察栏。
+ *   本文件因此按"三区"而不是"旧三栏"断言。
  */
 
-/** 取一条可用的讨论：优先 ended（内容稳定），否则任意有消息的。 */
-async function pickDiscussionId(): Promise<{ id: string; reason?: string }> {
-  const ended = await api.listDiscussions({ status: "ended", limit: 5 }, { timeoutMs: 8000 });
-  const endedItems = (ended.body as { items?: Array<{ id: string }> } | null)?.items ?? [];
-  if (endedItems[0]) return { id: endedItems[0].id };
+/** 左：现场实录；中：圆桌舞台；右：共识/分歧/待验证。 */
+const PANELS = {
+  transcript: '[data-testid="transcript"]',
+  roundtable: '[data-testid="round-table"]',
+  insights: '[data-testid="insight-panel"], .studio-insights, [data-testid="insights-panel"]',
+} as const;
 
-  const any = await api.listDiscussions({ limit: 5 }, { timeoutMs: 8000 });
-  const anyItems = (any.body as { items?: Array<{ id: string }> } | null)?.items ?? [];
-  if (anyItems[0]) return { id: anyItems[0].id };
+async function pickDiscussionId(): Promise<{ id: string; reason?: string }> {
+  for (const status of ["ended", "live", "all"]) {
+    const res = await api.listDiscussions({ status, limit: 5 }, { timeoutMs: 8000 });
+    const items = (res.body as { items?: Array<{ id: string }> } | null)?.items ?? [];
+    if (items[0]) return { id: items[0].id };
+  }
   return { id: "", reason: "库里没有可用讨论（后端不可达或未 seed）" };
 }
 
@@ -34,7 +39,6 @@ async function box(page: Page, selector: string) {
   return b!;
 }
 
-/** 两个矩形在水平方向上是否重叠（允许 1px 亚像素误差）。 */
 function overlapsHorizontally(
   a: { x: number; width: number },
   b: { x: number; width: number },
@@ -43,50 +47,48 @@ function overlapsHorizontally(
   return a.x + a.width > b.x + tolerance && b.x + b.width > a.x + tolerance;
 }
 
-test.describe("布局回归 / 演播厅三栏", () => {
-  test("1440×900：rail / stage / insights 三栏并排不重叠，且铺满视口宽度", async ({ page, backend }) => {
+test.describe("布局回归 / 演播厅三区", () => {
+  test("1440×900：实录 / 圆桌 / 共识 三区并排不重叠，且铺满视口宽度", async ({ page, backend }) => {
     test.skip(!backend.reachable, `后端不可达（${backend.error}）`);
     const picked = await pickDiscussionId();
     test.skip(picked.id === "", picked.reason ?? "无可用讨论");
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(`/d/${picked.id}`, { waitUntil: "domcontentloaded" });
-    await expect(page.locator(SEL.transcriptList).first()).toBeVisible();
+    await expect(page.locator(SEL.transcriptList).first()).toBeVisible({ timeout: 15_000 });
 
-    const rail = await box(page, SEL.studioRail);
-    const stage = await box(page, SEL.studioStage);
-    const insights = await box(page, SEL.studioInsights);
+    const left = await box(page, PANELS.transcript);
+    const center = await box(page, PANELS.roundtable);
+    const right = await box(page, PANELS.insights);
 
-    // 1) 三栏都有实际尺寸（重叠时会有一栏被压成 0 或被完全盖住）
     for (const [name, b] of [
-      ["rail", rail],
-      ["stage", stage],
-      ["insights", insights],
+      ["实录", left],
+      ["圆桌", center],
+      ["共识", right],
     ] as const) {
       expect(b.width, `${name} 宽度应 > 120px（当前 ${b.width}）`).toBeGreaterThan(120);
       expect(b.height, `${name} 高度应 > 200px（当前 ${b.height}）`).toBeGreaterThan(200);
     }
 
-    // 2) 水平不重叠：rail | stage | insights 依次排列
-    expect(overlapsHorizontally(rail, stage), `rail 与 stage 水平重叠：rail.x=${rail.x} w=${rail.width}, stage.x=${stage.x} w=${stage.width}`).toBe(false);
-    expect(overlapsHorizontally(stage, insights), `stage 与 insights 水平重叠：stage.x=${stage.x} w=${stage.width}, insights.x=${insights.x} w=${insights.width}`).toBe(false);
-    expect(overlapsHorizontally(rail, insights), "rail 与 insights 不应水平重叠").toBe(false);
+    expect(
+      overlapsHorizontally(left, center),
+      `实录与圆桌水平重叠：left.right=${left.x + left.width}, center.x=${center.x}`,
+    ).toBe(false);
+    expect(
+      overlapsHorizontally(center, right),
+      `圆桌与共识水平重叠：center.right=${center.x + center.width}, right.x=${right.x}`,
+    ).toBe(false);
+    expect(overlapsHorizontally(left, right), "实录与共识不应水平重叠").toBe(false);
 
-    // 3) 顺序正确 + 铺满视口：rail 从左侧起、insights 顶到右侧
-    expect(rail.x, "rail 应贴左边").toBeLessThanOrEqual(2);
-    expect(insights.x + insights.width, "insights 应覆盖到视口右边缘").toBeGreaterThanOrEqual(1440 - 2);
+    expect(left.x, "实录应贴左边").toBeLessThanOrEqual(2);
+    expect(right.x + right.width, "共识区应覆盖到视口右边缘").toBeGreaterThanOrEqual(1440 - 2);
 
-    // 4) 三栏合计宽度不应远超视口（重叠或错位时会异常）
-    const covered = stage.x + stage.width;
-    expect(covered, "stage 右边界应在 insights 左边界附近或之前").toBeLessThanOrEqual(insights.x + insights.width + 1);
-
-    // 5) 页面不整体滚动（三栏布局的基本前提）
     const overflow = await pageOverflow(page);
-    expect(overflow.overflowX, "1440 下不应出现横向滚动").toBeLessThanOrEqual(1);
-    expect(overflow.overflowY, "1440 下不应出现整页纵向滚动").toBeLessThanOrEqual(1);
+    expect(overflow.overflowX, "1440 下不应横向滚动").toBeLessThanOrEqual(1);
+    expect(overflow.overflowY, "1440 下不应整页纵向滚动").toBeLessThanOrEqual(1);
   });
 
-  test("1440×900：首条消息可见（不是空壳）", async ({ page, backend }) => {
+  test("1440×900：首条消息可见（不是空壳）且落在实录区内", async ({ page, backend }) => {
     test.skip(!backend.reachable, `后端不可达（${backend.error}）`);
     const picked = await pickDiscussionId();
     test.skip(picked.id === "", picked.reason ?? "无可用讨论");
@@ -106,18 +108,35 @@ test.describe("布局回归 / 演播厅三栏", () => {
     const text = (await first.innerText()).replace(/\s+/g, " ").trim();
     expect(text.length, "首条消息文本不应为空").toBeGreaterThan(4);
 
-    // 首条消息应落在 stage 栏内（三栏错位时它会跑到别的栏上面）
     const msgBox = await first.boundingBox();
-    const stageBox = await box(page, SEL.studioStage);
+    const panel = await box(page, PANELS.transcript);
     expect(msgBox, "首条消息应有 boundingBox").not.toBeNull();
-    expect(msgBox!.x, "首条消息应在 stage 栏内").toBeGreaterThanOrEqual(stageBox.x - 1);
-    expect(msgBox!.x + msgBox!.width, "首条消息不应溢出 stage 右边界")
-      .toBeLessThanOrEqual(stageBox.x + stageBox.width + 2);
+    expect(msgBox!.x, "首条消息应在实录区内").toBeGreaterThanOrEqual(panel.x - 1);
+    expect(msgBox!.x + msgBox!.width, "首条消息不应溢出实录区右边界")
+      .toBeLessThanOrEqual(panel.x + panel.width + 2);
+  });
+
+  test("圆桌舞台可见，席位数 = 1 主持 + N 专家（docs/09 §3）", async ({ page, backend }) => {
+    test.skip(!backend.reachable, `后端不可达（${backend.error}）`);
+    const picked = await pickDiscussionId();
+    test.skip(picked.id === "", picked.reason ?? "无可用讨论");
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`/d/${picked.id}`, { waitUntil: "domcontentloaded" });
+
+    const table = page.locator(PANELS.roundtable).first();
+    await expect(table, "应渲染圆桌舞台").toBeVisible({ timeout: 15_000 });
+
+    const detail = await api.getDiscussion(picked.id, { timeoutMs: 8000 });
+    const experts = ((detail.body as { experts?: unknown[] } | null)?.experts ?? []).length;
+    const seats = await page.locator('[data-testid^="seat-"]:not([data-testid="seat-status"])').count();
+    expect(seats, `席位数应等于阵容人数（${experts}）`).toBe(experts);
+    expect(seats, "至少 1 主持 + 3 专家").toBeGreaterThanOrEqual(4);
   });
 
   for (const vp of [
-    { width: 1024, height: 768, label: "1024 桌面收窄" },
-    { width: 390, height: 844, label: "390 手机" },
+    { width: 1024, height: 768, label: "1024" },
+    { width: 390, height: 844, label: "390" },
   ]) {
     test(`${vp.width}×${vp.height}（${vp.label}）：不出现 body 整体滚动`, async ({ page, backend }) => {
       test.skip(!backend.reachable, `后端不可达（${backend.error}）`);
@@ -126,8 +145,25 @@ test.describe("布局回归 / 演播厅三栏", () => {
 
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await page.goto(`/d/${picked.id}`, { waitUntil: "domcontentloaded" });
-      // 等首屏渲染稳定（避免在骨架屏阶段量尺寸）
       await page.waitForTimeout(800);
+
+      // 窄屏是 Tab 视图：默认可能停在「圆桌」，先点一下圆桌确保主视图被激活
+      const roundTab = page.getByRole("tab", { name: /圆桌/ });
+      if ((await roundTab.count()) > 0) {
+        await roundTab.first().click().catch(() => undefined);
+        await page.waitForTimeout(300);
+      }
+
+      // 窄屏默认展示「圆桌」；实录需要切 Tab 才可见（docs/09 §3），
+      // 因此这里只要求"至少一个主视图可见"。
+      const roundTable = page.locator(PANELS.roundtable).first();
+      const roundTableVisible = (await roundTable.count()) > 0 && (await roundTable.isVisible());
+      const transcript = page.locator(SEL.transcriptList).first();
+      const transcriptVisible = (await transcript.count()) > 0 && (await transcript.isVisible());
+      expect(
+        roundTableVisible || transcriptVisible,
+        `${vp.width} 下应至少有一个主视图可见（圆桌或实录）`,
+      ).toBe(true);
 
       const overflow = await pageOverflow(page);
       expect(
@@ -139,9 +175,8 @@ test.describe("布局回归 / 演播厅三栏", () => {
         `${vp.width} 下出现整页纵向滚动：scrollHeight=${overflow.scrollHeight} clientHeight=${overflow.clientHeight}`,
       ).toBeLessThanOrEqual(1);
 
-      // 至少一个主面板是可滚动的：内容在容器内滚，而不是把页面撑开
       const scrollable = await page.$$eval(
-        `${SEL.studioStage}, ${SEL.transcriptList}`,
+        `${SEL.transcriptList}, [data-testid="round-table"]`,
         (els) =>
           els.some((el) => {
             const cs = getComputedStyle(el as HTMLElement);

@@ -615,10 +615,10 @@
       "payload": {
         "discussionId": "d_qa_main",
         "turnIndex": 10,
-        "speakerId": "e_04",
-        "speakerName": "苏芮",
-        "intent": "support",
-        "turnFocus": "团队成本与招聘节奏·第10轮",
+        "speakerId": "e_host",
+        "speakerName": "林致远",
+        "intent": "summary",
+        "turnFocus": "节奏与议题边界·第10轮",
         "messageId": "m_10",
         "references": [
           "m_08"
@@ -635,12 +635,12 @@
         "discussionId": "d_qa_main",
         "message": {
           "id": "m_10",
-          "expertId": "e_04",
-          "speakerName": "苏芮",
-          "speakerTitle": "技术合伙人",
-          "speakerColor": "#7A8CA8",
+          "expertId": "e_host",
+          "speakerName": "林致远",
+          "speakerTitle": "资深圆桌主持",
+          "speakerColor": "#E5E7EB",
           "content": "我同意一半。方向没错，但把责任全推给个人，忽略了过去三年的招聘结构变化。",
-          "intent": "support",
+          "intent": "summary",
           "turnIndex": 10,
           "charCount": 36,
           "degraded": false,
@@ -656,96 +656,6 @@
     {
       "id": "evt_26",
       "seq": 26,
-      "type": "turn.started",
-      "payload": {
-        "discussionId": "d_qa_main",
-        "turnIndex": 11,
-        "speakerId": "e_host",
-        "speakerName": "林致远",
-        "intent": "redirect",
-        "turnFocus": "节奏与议题边界·第11轮",
-        "messageId": "m_11",
-        "references": [
-          "m_09"
-        ],
-        "targetMessageId": "m_10"
-      },
-      "createdAt": "2026-11-01T10:02:00.000Z"
-    },
-    {
-      "id": "evt_27",
-      "seq": 27,
-      "type": "message.completed",
-      "payload": {
-        "discussionId": "d_qa_main",
-        "message": {
-          "id": "m_11",
-          "expertId": "e_host",
-          "speakerName": "林致远",
-          "speakerTitle": "资深圆桌主持",
-          "speakerColor": "#E5E7EB",
-          "content": "数据上更微妙：招聘量下降和岗位消失不是一回事，前者会先出现。",
-          "intent": "redirect",
-          "turnIndex": 11,
-          "charCount": 30,
-          "degraded": false,
-          "targetMessageId": "m_10",
-          "references": [
-            "m_09"
-          ],
-          "createdAt": "2026-11-01T10:02:04.000Z"
-        }
-      },
-      "createdAt": "2026-11-01T10:02:04.000Z"
-    },
-    {
-      "id": "evt_28",
-      "seq": 28,
-      "type": "turn.started",
-      "payload": {
-        "discussionId": "d_qa_main",
-        "turnIndex": 12,
-        "speakerId": "e_host",
-        "speakerName": "林致远",
-        "intent": "summary",
-        "turnFocus": "节奏与议题边界·第12轮",
-        "messageId": "m_12",
-        "references": [
-          "m_10"
-        ],
-        "targetMessageId": "m_11"
-      },
-      "createdAt": "2026-11-01T10:02:10.000Z"
-    },
-    {
-      "id": "evt_29",
-      "seq": 29,
-      "type": "message.completed",
-      "payload": {
-        "discussionId": "d_qa_main",
-        "message": {
-          "id": "m_12",
-          "expertId": "e_host",
-          "speakerName": "林致远",
-          "speakerTitle": "资深圆桌主持",
-          "speakerColor": "#E5E7EB",
-          "content": "如果只看大公司样本，结论会系统性偏乐观，中小企业才是多数。",
-          "intent": "summary",
-          "turnIndex": 12,
-          "charCount": 29,
-          "degraded": false,
-          "targetMessageId": "m_11",
-          "references": [
-            "m_10"
-          ],
-          "createdAt": "2026-11-01T10:02:14.000Z"
-        }
-      },
-      "createdAt": "2026-11-01T10:02:14.000Z"
-    },
-    {
-      "id": "evt_30",
-      "seq": 30,
       "type": "discussion.summarizing",
       "payload": {
         "discussionId": "d_qa_main",
@@ -755,8 +665,8 @@
       "createdAt": "2026-11-01T10:06:40.000Z"
     },
     {
-      "id": "evt_31",
-      "seq": 31,
+      "id": "evt_27",
+      "seq": 27,
       "type": "summary.completed",
       "payload": {
         "discussionId": "d_qa_main",
@@ -769,8 +679,8 @@
       "createdAt": "2026-11-01T10:07:00.000Z"
     },
     {
-      "id": "evt_32",
-      "seq": 32,
+      "id": "evt_28",
+      "seq": 28,
       "type": "discussion.ended",
       "payload": {
         "discussionId": "d_qa_main",

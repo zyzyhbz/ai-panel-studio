@@ -150,7 +150,22 @@ export class NetworkRecorder {
     await Promise.allSettled(this.pending);
   }
 
+  /**
+   * 用于"密钥/CoT/JSON 泄露"扫描的文本。
+   *
+   * 刻意**排除 JS/TS 源与 bundle**：dev 模式下 Vite 会把 `/node_modules/.vite/...`
+   * 这类模块 URL 写进模块图，被 `node_modules[\\/]` 规则命中会造成假阳性
+   * （曾把"首页无堆栈泄露"误判为失败）。堆栈扫描只应作用于 JSON/HTML/文本响应。
+   */
   allText(): string {
+    return this.responses
+      .filter((r) => !/javascript|ecmascript/i.test(r.contentType))
+      .map((r) => r.body)
+      .join("\n");
+  }
+
+  /** 全部响应文本（排查用，不用于断言）。 */
+  allTextIncludingScripts(): string {
     return this.responses.map((r) => r.body).join("\n");
   }
 

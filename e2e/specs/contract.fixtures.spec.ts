@@ -45,18 +45,29 @@ test.describe("契约 / fixtures 结构自检", () => {
     expect(bad, `无法解析的 fixture：\n${bad.join("\n")}`).toHaveLength(0);
   });
 
-  test("5 个议题且 plannedTurns/maxTurns 符合 06 §1.6 公式", async () => {
+  test("5 个议题且 plannedTurns(coverageFloor)/maxTurns 符合 docs/09 §5（8/10/12，上限 36）", async () => {
     const doc = JSON.parse(await readFile(path.join(FIXTURES, "topics.json"), "utf8"));
     expect(doc.topics.length).toBeGreaterThanOrEqual(5);
 
+    const seen = new Map<number, number>();
     for (const t of doc.topics) {
-      const planned = Math.min(12, Math.max(8, 4 + 2 * t.expertCount));
-      const max = Math.min(14, planned + 2);
-      expect(t.plannedTurns, `${t.id} plannedTurns`).toBe(planned);
-      expect(t.maxTurns, `${t.id} maxTurns`).toBe(max);
+      // coverageFloor：结束由观点/争点决定，轮数只是保底
+      const planned = Math.min(12, Math.max(8, 2 * t.expertCount + 2));
+      expect(t.plannedTurns, `${t.id} plannedTurns 应为 ${planned}`).toBe(planned);
+      expect(t.maxTurns, `${t.id} maxTurns 应为 36`).toBe(36);
+      seen.set(t.expertCount, planned);
       expect(t.marker?.length, `${t.id} 需要 marker 用于串线检测`).toBeGreaterThanOrEqual(2);
       expect(t.rosterFixture).toMatch(/^llm\/roster\//);
     }
+
+    // coverageFloor 必须是 8/10/12 之一，且不超过硬上限
+    for (const t of doc.topics) {
+      expect([8, 10, 12], `${t.id} plannedTurns=${t.plannedTurns} 应为 8/10/12`).toContain(t.plannedTurns);
+      expect(t.plannedTurns, `${t.id} 不应超过硬上限`).toBeLessThanOrEqual(36);
+    }
+    // 5 个议题覆盖 3/4/5/6 人，应能对上 8/10/12 里至少两档
+    const distinctPlanned = new Set(seen.values());
+    expect(distinctPlanned.size, `应覆盖多档 coverageFloor（实际 ${[...distinctPlanned].join("/")}）`).toBeGreaterThanOrEqual(2);
   });
 
   test("每个 kind 都有正常 fixture，且 9 种场景全覆盖", async () => {

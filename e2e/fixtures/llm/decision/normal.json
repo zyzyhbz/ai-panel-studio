@@ -78,21 +78,7 @@
       }
     },
     {
-      "content": "{\"speakerId\":\"e_04\",\"intent\":\"support\",\"turnFocus\":\"团队成本与招聘节奏·第10轮\",\"messageId\":\"m_10\",\"targetMessageId\":\"m_09\"}",
-      "meta": {
-        "model": "deepseek-flash",
-        "thinking": "disabled"
-      }
-    },
-    {
-      "content": "{\"speakerId\":\"e_host\",\"intent\":\"redirect\",\"turnFocus\":\"节奏与议题边界·第11轮\",\"messageId\":\"m_11\",\"targetMessageId\":\"m_10\",\"references\":[\"m_09\",\"m_10\"]}",
-      "meta": {
-        "model": "deepseek-flash",
-        "thinking": "disabled"
-      }
-    },
-    {
-      "content": "{\"speakerId\":\"e_host\",\"intent\":\"summary\",\"turnFocus\":\"节奏与议题边界·第12轮\",\"messageId\":\"m_12\",\"targetMessageId\":\"m_11\"}",
+      "content": "{\"speakerId\":\"e_host\",\"intent\":\"summary\",\"turnFocus\":\"节奏与议题边界·第10轮\",\"messageId\":\"m_10\",\"targetMessageId\":\"m_09\"}",
       "meta": {
         "model": "deepseek-flash",
         "thinking": "disabled"

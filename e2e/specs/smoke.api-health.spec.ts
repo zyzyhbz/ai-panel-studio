@@ -30,8 +30,20 @@ test.describe("冒烟 / API 健康检查", () => {
     expect(typeof body.rssBytes).toBe("number");
     expect(String(body.now)).toMatch(/^\d{4}-\d{2}-\d{2}T/);
 
-    // 自动化必须跑在 mock 模式：real 模式会调真实模型（烧钱 + 不可重复）
-    expect(body.llmMode, "自动化测试必须 LLM_MODE=mock").toBe("mock");
+    // 自动化默认必须跑在 mock 模式：real 会调真实模型（烧钱 + 不可重复）。
+    // 需要跑真实 thinking smoke 时显式设 E2E_ALLOW_REAL=1，并在报告里标明"这是 real 运行"。
+    const allowReal = process.env.E2E_ALLOW_REAL === "1";
+    if (allowReal) {
+      expect(["mock", "real"], `llmMode 非法：${body.llmMode}`).toContain(body.llmMode);
+      if (body.llmMode === "real") {
+        test.info().annotations.push({ type: "real-mode", description: "E2E_ALLOW_REAL=1，本次为真实模型运行" });
+      }
+    } else {
+      expect(
+        body.llmMode,
+        "自动化测试必须 LLM_MODE=mock（real 模式请用 E2E_ALLOW_REAL=1 显式开启）",
+      ).toBe("mock");
+    }
 
     // 响应体不能泄漏 Key / 堆栈（NFR-06）
     assertClean(JSON.stringify(body), "GET /api/health 响应体");

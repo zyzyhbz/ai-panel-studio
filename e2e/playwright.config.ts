@@ -17,11 +17,19 @@ import { env } from "./helpers/env";
  *    仓库路径含中文时，trace 写盘会在 cp936 拼接处 ENOENT，导致"不是断言的失败"。
  */
 const ARTIFACTS = env.artifactsDir;
+/**
+ * 每次运行一个独立产物目录。
+ *
+ * 踩过的坑：两个人同时跑 E2E 时共用 `test-results/`，一方结束时清理目录，
+ * 另一方的 trace 文件被删 → `browserContext.close: ENOENT ... .trace`，
+ * 表现为"用例失败但不是断言失败"。用 runId 隔离即可。
+ */
+const RUN_DIR = path.join(ARTIFACTS, env.runId);
 
 export default defineConfig({
   testDir: "./specs",
   globalSetup: "./global-setup.ts",
-  outputDir: path.join(ARTIFACTS, "test-results"),
+  outputDir: path.join(RUN_DIR, "test-results"),
   fullyParallel: false,
   workers: 1,
   retries: 0,
@@ -31,7 +39,7 @@ export default defineConfig({
   reporter: [
     ["list"],
     ["json", { outputFile: path.join(ARTIFACTS, "results.json") }],
-    ["html", { outputFolder: path.join(ARTIFACTS, "report"), open: "never" }],
+    ["html", { outputFolder: path.join(RUN_DIR, "report"), open: "never" }],
   ],
   use: {
     baseURL: env.baseURL,

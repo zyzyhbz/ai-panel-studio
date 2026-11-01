@@ -83,8 +83,15 @@ const TOPICS = [
   },
 ];
 
-const plannedTurnsFor = (n) => Math.min(12, Math.max(8, 4 + 2 * Math.min(6, Math.max(3, n))));
-const maxTurnsFor = (n) => Math.min(14, plannedTurnsFor(n) + 2);
+/**
+ * 轮次口径（docs/09 §5 + 2026-11-01 用户纠正：结束由观点/争点决定，轮数只是保底）：
+ *   coverageFloor（接口字段仍叫 plannedTurns）= min(12, max(8, 2n + 2))
+ *     → 3 人: 8 / 4 人: 10 / 5 人: 12 / 6 人: 12
+ *   maxTurns（硬上限）= 36
+ * 24–36 是"讨论深度目标"，不是必须跑满的计划轮次。
+ */
+const plannedTurnsFor = (n) => Math.min(12, Math.max(8, 2 * Math.min(6, Math.max(3, n)) + 2));
+const maxTurnsFor = () => 36;
 
 function buildRoster(t) {
   const [hn, hp, ht] = t.host;
@@ -118,10 +125,17 @@ function validateRoster(t, experts) {
 function buildTurnPlan(expertCount, count) {
   const plan = [];
   const recent = [];
+  const tailIsHostTwice = () => plan.length >= 2 && plan.at(-1).speaker === "e_host" && plan.at(-2).speaker === "e_host";
   for (let turn = 1; turn <= count; turn += 1) {
     if (turn === 1) { plan.push({ speaker: "e_host", intent: "opening" }); continue; }
     if (turn === count) { plan.push({ speaker: "e_host", intent: "summary" }); continue; }
-    if (turn % 4 === 0 || turn === count - 1) {
+    // 主持人插入位：turn%4 或收束前一轮；但绝不允许 host 连续 3 次
+    // （小轮次时 turn%4 与 count-1 会相邻，必须让位给专家，否则收尾就成 3 连）
+    const prevIsHost = plan.at(-1)?.speaker === "e_host";
+    const hostSlot =
+      (turn % 4 === 0 && !tailIsHostTwice()) ||
+      (turn === count - 1 && !prevIsHost && !tailIsHostTwice());
+    if (hostSlot) {
       const intents = ["probe", "mediate", "redirect"];
       plan.push({ speaker: "e_host", intent: intents[Math.floor(turn / 4) % 3] });
       continue;
@@ -312,12 +326,12 @@ async function main() {
       ],
     },
     runaway: {
-      desc: "永不收束：20 步都不给 summary，测 maxTurns=14 硬上限", scenario: "runaway",
+      desc: "永不收束：40 步都不给 summary，测 maxTurns=36 硬上限", scenario: "runaway",
       outcome: "degraded", onExhausted: "loop",
-      notes: ["到 maxTurns 自动进入 summarizing", "turnCount 不得 >14"],
-      steps: Array.from({ length: 20 }, (_, i) => step(json({
+      notes: ["到 maxTurns=36 自动进入 summarizing", "turnCount 不得 >36"],
+      steps: Array.from({ length: 40 }, (_, i) => step(json({
         speakerId: `e_0${(i % 4) + 1}`, intent: "extend", turnFocus: `第 ${i + 1} 次跑题`,
-        messageId: `m_${String(i + 2).padStart(2, "0")}`,
+        messageId: `m_${String(i + 2).padStart(3, "0")}`,
       }))),
     },
   };

@@ -5,8 +5,8 @@
       "id": "ai-junior-dev",
       "topic": "AI 会不会让初级开发者失业？",
       "expertCount": 4,
-      "plannedTurns": 12,
-      "maxTurns": 14,
+      "plannedTurns": 10,
+      "maxTurns": 36,
       "rosterFixture": "llm/roster/ai-junior-dev.json",
       "marker": "初级开发者"
     },
@@ -14,8 +14,8 @@
       "id": "remote-default",
       "topic": "远程办公应该成为默认工作制吗？",
       "expertCount": 4,
-      "plannedTurns": 12,
-      "maxTurns": 14,
+      "plannedTurns": 10,
+      "maxTurns": 36,
       "rosterFixture": "llm/roster/remote-default.json",
       "marker": "远程办公"
     },
@@ -23,8 +23,8 @@
       "id": "college-major",
       "topic": "读大学选专业还要不要看就业率？",
       "expertCount": 3,
-      "plannedTurns": 10,
-      "maxTurns": 12,
+      "plannedTurns": 8,
+      "maxTurns": 36,
       "rosterFixture": "llm/roster/college-major.json",
       "marker": "选专业"
     },
@@ -33,7 +33,7 @@
       "topic": "二线城市靠补贴抢人，能留住人吗？",
       "expertCount": 5,
       "plannedTurns": 12,
-      "maxTurns": 14,
+      "maxTurns": 36,
       "rosterFixture": "llm/roster/city-subsidy.json",
       "marker": "二线城市"
     },
@@ -42,7 +42,7 @@
       "topic": "开源作者该不该向商业公司收费？",
       "expertCount": 6,
       "plannedTurns": 12,
-      "maxTurns": 14,
+      "maxTurns": 36,
       "rosterFixture": "llm/roster/oss-pricing.json",
       "marker": "开源作者"
     }

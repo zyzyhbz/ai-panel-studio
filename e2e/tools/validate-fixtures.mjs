@@ -260,8 +260,9 @@ function validateTopics(file, doc) {
       `topic 长度越界：${t.topic}`);
     need(Number.isInteger(t.expertCount) && t.expertCount >= 3 && t.expertCount <= 6,
       `expertCount 越界：${t.expertCount}`);
-    const planned = Math.min(12, Math.max(8, 4 + 2 * t.expertCount));
-    const max = Math.min(14, planned + 2);
+    // 轮次口径（docs/09 §5 改版）：plannedTurns = min(36, 12 + 4*n)，maxTurns = 36
+    const planned = Math.min(12, Math.max(8, 2 * Math.min(6, Math.max(3, t.expertCount)) + 2));
+    const max = 36;
     if (t.plannedTurns !== planned) err(file, `${t.id} plannedTurns=${t.plannedTurns} 应为 ${planned}`);
     if (t.maxTurns !== max) err(file, `${t.id} maxTurns=${t.maxTurns} 应为 ${max}`);
     need(typeof t.marker === "string" && t.marker.length >= 2, `${t.id} 缺 marker（串线检测用）`);
