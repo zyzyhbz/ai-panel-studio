@@ -250,6 +250,7 @@ export function ReplayPage() {
       >
         <RoundTable
           view={view}
+          buffer={buffer}
           statuses={statuses}
           convergence={convergence}
           progress={progress}

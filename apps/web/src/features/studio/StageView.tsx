@@ -164,6 +164,7 @@ export function StageView({
         >
           <RoundTable
             view={view}
+            buffer={buffer}
             statuses={statuses}
             convergence={convergence}
             progress={progress}

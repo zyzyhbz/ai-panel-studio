@@ -1,7 +1,9 @@
 import type { CSSProperties } from "react";
 
 import type { Expert } from "../api/types";
+import type { StreamBuffer } from "../domain/streamBuffer";
 import type { SessionView } from "../domain/session";
+import { SpeechBubble } from "./SpeechBubble";
 import {
   EXPERT_STATUS_LABEL,
   expertsOf,
@@ -138,12 +140,14 @@ function Seat({
 
 export function RoundTable({
   view,
+  buffer,
   statuses,
   convergence,
   progress,
   now,
 }: {
   view: SessionView;
+  buffer: StreamBuffer;
   statuses: Map<string, ExpertStatus>;
   convergence: Convergence;
   progress: Progress;
@@ -187,6 +191,8 @@ export function RoundTable({
               : undefined
           }
         />
+
+        <SpeechBubble view={view} buffer={buffer} now={now ?? Date.now()} />
 
         {activePoint && (
           <div

@@ -205,7 +205,10 @@ export function LobbyView() {
   const failed = view.status === "failed";
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-[1080px] flex-col px-4 py-6 md:px-8">
+    <div
+      data-testid="lobby-scroll"
+      className="mx-auto flex h-full w-full max-w-[1080px] flex-col overflow-y-auto overflow-x-hidden px-4 py-6 md:px-8"
+    >
       <div className="flex items-center gap-3">
         <Link
           to="/"
