@@ -214,8 +214,9 @@ E2E 用本机 Chrome（`channel: "chrome"`），不下载 Playwright 浏览器�
 
 | 角色 | 负责 |
 | --- | --- |
-| PM | 需求、契约、任务、集成、交付 |
-| AI/Agent | prompt、上下文、发言策略、行为 eval |
-| 前端 | 演播厅 UI、交互、响应式、SSE 客户端 |
-| 后端 | SQLite、API、SSE、会话运行时 |
-| 测试 | 独立验收、E2E、压力、回归 |
+| 我（项目负责人） | 拆任务、契约裁决、调度 Agent、集成、验收、交付 |
+| 产品经理 Agent | 需求、PRD、功能边界、验收标准 |
+| AI/Agent 工程师 | prompt、上下文、发言策略、行为 eval |
+| 前端 Agent | 演播厅 UI、交互、响应式、SSE 客户端 |
+| 后端 Agent | SQLite、API、SSE、会话运行时 |
+| 测试 Agent | 独立验收、E2E、压力、回归 |
