@@ -1,80 +1,75 @@
 # 真实 DeepSeek Smoke 记录
 
-- 日期：2026-11-01 12:27（Asia/Shanghai）
-- 模式：`LLM_MODE=real`
-- Base URL：`https://api.deepseek.com`
+## 最新：深度讨论改版后（thinking 按 prompt 分配）
+
+- 日期：2026-11-01 14:11–14:14（Asia/Shanghai）
+- 模式：`LLM_MODE=real`，独立 `data/real-final.db`，端口 3002（不影响演示库）
 - 模型：`deepseek-flash`
-- thinking：`disabled`
-- 数据库：`data/real-smoke.db`（独立于演示库）
-- Key：配置阶段从本机 Key 文件读取一次，写入 gitignored `.env.local`；未打印、未提交、未进入日志
+- thinking：SPEECH/SUMMARY 开；ROSTER/DECIDE/INSIGHT 关（防止 JSON 输出被推理吃空）
+- 配置：`.env.local`，Key 未打印、未提交、未进入日志
+- 议题：`AI 应该替代管理者做决策吗？`，3 位专家
 
-## 目的
-
-验证 mock 之外的真实链路：
-
-1. Key 只在服务端生效，启动自检 `llmMode:"real"`。
-2. `deepseek-flash` 接受当前请求参数（含 `thinking:{type:"disabled"}`）。
-3. 阵容生成、决策、发言流式、共识/分歧、总结都能跑通。
-4. 真实延迟和成本在可接受范围。
-
-## 结果
+### 结果
 
 ```text
-POST /api/discussions        → 201 ready，5 人（1 主持 + 4 专家）
+POST /api/discussions            → 201 ready
 POST /api/discussions/:id/confirm → 202 live
-t=6s   live  turns=3  msgs=3  insights=0
-t=9s   live  turns=5  msgs=5  insights=2
-t=12s  live  turns=6  msgs=6  insights=2
-t=15s  live  turns=8  msgs=8  insights=4
-t=18s  live  turns=9  msgs=9  insights=5
-t=21s  live  turns=10 msgs=10 insights=5
-t=24s  summarizing turns=12 msgs=12 insights=5
-t=27s  ended  turns=12 msgs=12 insights=6 summary=true
+t=8s    live        turns=1
+t=28s   live        turns=7   insights=3
+t=53s   live        turns=12  insights=5
+t=108s  live        turns=22  insights=7
+t=179s  summarizing turns=36  insights=7
+RESULT:
+  status=ended
+  turns=36 / max=36 / planned(coverageFloor)=8
+  elapsed=184s
+  messages=36
+  degraded=0
+  referenced=30 / 36（83% 的发言引用了具体 messageId）
+  insights=7
+  summaryChars=395
+  errorCode=null
 ```
 
-- 首条发言是主持人 `opening`，不是 rebut。
-- 讨论 12 轮自然收束，进入 `summarizing` → `summary.completed` → `ended`。
-- 6 条 `insight.updated` 对应 6 条洞察，覆盖共识、分歧、待验证。
-- 总结是主持人自然语言，未出现 JSON。
-- 总耗时约 **27 秒**（含 12 轮 LLM 调用），符合“几分钟内完成一场圆桌”的产品目标。
+### 输出抽样
 
-## 真实输出抽样
+- 开场（主持人）：
+  > 真正的分歧不在 AI 准不准，而在决策出错后由谁担责。唐一鸣说的“例外”由谁认定？
+- 专家交锋：
+  > 有条件同意你那半句“预先设好升级规则”，但规则由谁写、谁能改？——那才是最硬的决策权；再往下，改一次阈值就把责任摊薄一层，最后谁都认不了。
+- 反驳：
+  > 反对“锚不住谁能否决”这半句：驳回率趋近于零也可能是没人敢驳，指标反而把否决权藏得更深。真正的否决权是“无人同意时谁能一键停掉 AI”，把它写进权限表并定期演练，签名才不是图章。
+- 总结（节选）：
+  > 这场没有形成明确共识……主要分歧在于 AI 替代的边界该由什么来定……没解决的是：算法在替督导决策这层追问，沈砺没有正面回答；发版权这条边界由谁划、代价谁付也悬着。可以带走的判断是，先别急着定“替不替代”，把谁验、谁改、谁按停这三件事落到具体的人头上，比争论 AI 能不能拍板更要紧。
 
-首条（主持人开场）：
+### 结论
 
-> 今天只争一件事：圆桌到底带来决策增益，还是把噪声包装成共识。
+- **质量**：0 条 degraded；30/36 条发言有具体 `targetMessageId`；专家在互相回应/有条件同意/反驳，不再是角色独白。
+- **收束**：36 轮是安全上限，不是目标。本场始终有一个未回应的挑战，`saturation.ready` 没有满足，因此走 36 轮硬上限；总结显式列出了未解决争点。这证明“未饱和不硬收”与“36 兜底”都生效，不证明每场都会提前收。
+- **成本/延迟**：3 位专家、36 轮、184s；按 token 估算单场约 ¥0.5（以账单为准）。
+- **边界**：只跑了 1 场真实 3 人局；未做 5 议题真实 eval / 5 会话真实并发。
 
-最后一条（收尾前）：
+## 历史：第一版 smoke（thinking off，已被上面的结果取代）
 
-> 争出了一条：增益看独立性和可追溯性，不看热闹。还差一步——议程权怎么被外部约束，谁都没给出可操作的答案。
+- 日期：2026-11-01 12:27
+- 模式：`LLM_MODE=real`，`deepseek-flash`，thinking disabled
+- 4 位专家，12 轮，27s，6 洞察，总结正常
+- 结论：真实链路 / JSON / 流式 / 洞察 / 总结均可用；但专家深度和交锋不足，促成了 v2 深度改版。
 
-总结（节选）：
+## Key 安全
 
-> 这场讨论形成了一条明确共识：圆桌的价值取决于发言的独立性与可追溯性，而不取决于发言数量或现场热闹程度。……主要分歧集中在三处……没解决的是两件事……
+- `.env.local` 在 `.gitignore` 内；`git status` 不显示；
+- 前端 bundle 扫描无 Key；
+- 日志只输出 `llmMode/model/thinking`，不含 Key；
+- 本次 smoke 使用独立 DB，未污染 5 条演示样例。
 
-洞察（抽样）：
-
-- `consensus`：圆桌的增益取决于发言的独立性与可追溯性，而非发言数量或热闹程度。
-- `divergence`：陈维桢认为圆桌能挖出分歧边界带来增益，许慕之认为圆桌只放大原有权力结构、淹没弱势声音。
-- `open_question`：圆桌带来的是决策增益，还是把噪声包装成共识。
-
-## 结论与边界
-
-- **真实链路可用**：不是 mock 假绿；Key、模型、流式、JSON、洞察、总结都通过了。
-- **thinking 字段被接受**：`deepseek-flash` + `thinking:{type:"disabled"}` 没有触发 400；未使用 `DEEPSEEK_THINKING=enabled` 退路。
-- **成本**：按单场 token 估算在 ¥1 以内；实际以 DeepSeek 账单为准。本次只跑 1 场 smoke，未做 5 议题真实 eval。
-- **未证明**：真实模型在 5 个议题上的稳定性、幻觉率、延迟分布；需要 AI-04 的多轮 eval，当前只有 mock 基线 + 1 次真实 smoke。
-- **Key 安全**：`.env.local` 在 `.gitignore` 内；`git status` 不显示；前端 bundle 扫描无 Key；日志只输出 `llmMode/model/thinking`，不含 Key。
-
-## 复现命令（不打印 Key）
+## 复现
 
 ```powershell
 cd D:\AI开发\ai-panel-studio
-# .env.local 已配置（gitignored）
 $env:LLM_MODE="real"
-$env:DATABASE_PATH="D:\AI开发\ai-panel-studio\data\real-smoke.db"
+$env:PORT="3002"
+$env:DATABASE_PATH="D:\AI开发\ai-panel-studio\data\real-final.db"
 .\scripts\pnpm.ps1 --filter @ai-panel/server dev
-# 另一个终端：创建讨论并 confirm，观察 /api/health 的 llmMode=real
+# 另一个终端：POST /api/discussions → confirm → 轮询 detail
 ```
-
-> 交付演示默认仍用 `LLM_MODE=mock`，避免评审时产生费用和等待；真实 smoke 只作为“确实接通过”的证据。

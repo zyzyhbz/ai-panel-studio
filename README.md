@@ -6,21 +6,21 @@
 
 ## 状态
 
-**G2 完成，RC 候选**。主链路、UI、E2E、真实 DeepSeek smoke 均已跑通。
+**RC 完成**。主链路、圆桌 UI、E2E、真实 DeepSeek smoke 均已跑通。
 
 | 项 | 结果 |
 | --- | --- |
 | 全仓 typecheck | 通过 |
-| 单测/组件/接口测试 | agent 86 + web 36 + server 19 |
-| Playwright E2E | **20 passed / 0 failed / 0 skipped** |
+| 单测/组件/接口测试 | **162 passed**（agent 92 + web 42 + server 28） |
+| Playwright E2E | **35 passed / 0 failed / 0 skipped** |
 | 5 会话 / 20 SSE 压力 | **PASS**：20 连接、0 串线、p95 2ms（mock） |
-| 真实 DeepSeek smoke | 12 轮 / 6 洞察 / 27s / 总结正常 |
+| 真实 DeepSeek smoke | **36 轮 / 0 degraded / 184s / 7 洞察 / 30 条引用** |
 | Key 扫描 | 无 Key 材料进入前端产物 |
 | 截止 | 2026-11-02（内部 17:00 提交） |
 
 - 运行时：Node.js 24.20.0（`.nvmrc`）
 - 技术栈：React 19 + Vite + TypeScript / Fastify 5 + TypeScript / SQLite / SSE
-- 模型：DeepSeek API（默认 `deepseek-flash`，实时链路关闭 thinking）
+- 模型：DeepSeek API（默认 `deepseek-flash`；SPEECH/SUMMARY 开 thinking，JSON 控制调用关）
 
 ## 这是什么
 
@@ -30,6 +30,7 @@
 - 专家根据 transcript 自主发言，不机械轮流
 - 共识/分歧/待验证问题实时更新，且有发言依据
 - 讨论过程可回放，直播与回放共用同一套状态还原
+- 结束由观点/争点饱和决定；轮次只做覆盖保底（`min(12,2n+2)`）与 36 轮安全上限
 - 多个议题并行，事件与上下文严格隔离
 
 ## 架构
@@ -108,7 +109,7 @@ pnpm start        # Fastify 托管 API + web/dist
 | `DEEPSEEK_API_KEY` | 空 | 只允许服务端；禁止 `VITE_` 前缀 |
 | `DEEPSEEK_BASE_URL` | `https://api.deepseek.com` | OpenAI 兼容 |
 | `DEEPSEEK_MODEL` | `deepseek-flash` | 实时链路 |
-| `DEEPSEEK_THINKING` | `disabled` | 关闭 thinking |
+| `DEEPSEEK_THINKING` | `enabled` | 真实模式开启 thinking |
 | `MOCK_DELAY_MS` | `0` | mock 演示可设 `800`，看到直播过程 |
 | `DATABASE_PATH` | `./data/app.db` | SQLite 路径 |
 | `PORT` / `HOST` | `3001` / `127.0.0.1` | API |
@@ -150,18 +151,19 @@ $env:LLM_MODE="real"
 ```powershell
 .\scripts\pnpm.ps1 typecheck
 .\scripts\pnpm.ps1 test
-.\scripts\pnpm.ps1 --filter @ai-panel/web build
+.\scripts\pnpm.ps1 build
 .\scripts\pnpm.ps1 exec playwright test --config e2e/playwright.config.ts
 .\scripts\pnpm.ps1 check:key
+.\scripts\pnpm.ps1 check:prompts
 ```
 
 当前基线：
 
 ```text
-agent:  86 passed
-web:    36 passed
-server: 19 passed
-e2e:    20 passed / 0 failed / 0 skipped
+agent:  92 passed
+web:    42 passed
+server: 28 passed
+e2e:    35 passed / 0 failed / 0 skipped
 ```
 
 E2E 用本机 Chrome（`channel: "chrome"`），不下载 Playwright 浏览器；产物写 `%TEMP%\ai-panel-e2e`，避免中文路径编码问题。
@@ -171,14 +173,15 @@ E2E 用本机 Chrome（`channel: "chrome"`），不下载 Playwright 浏览器�
 - 首页：进行中/待确认/最近结束；5s 轮询；空态/错误态
 - 创建：2–200 字、3–6 位专家、`clientRequestId` 幂等
 - 阵容：主持人 + 专家，姓名/职业/Title/立场轴/极性/关注领域/专属色
-- 演播厅：SSE 流式、专家三态、transcript、共识/分歧/待验证、总结
-- 回放：时间线、播放/暂停/1x/1.5x/2x、跳转，与直播共用 reducer
+- 演播厅：圆桌席位、SSE 流式、专家五态、transcript、共识/分歧/待验证、总结
+- 回放：时间线、播放/暂停/1x/1.5x/2x/跳转，与直播共用 reducer
+- 返回大厅（直播中返回不结束会话）；三套配色（Atelier/Nocturne/Paper & Ink）
 - 多讨论并行隔离；SQLite WAL + 事件投影；断线补发/去重
-- 真实 DeepSeek smoke；mock 5 议题 eval（15/15 门禁）
+- 真实 DeepSeek smoke（36 轮 / 0 degraded）；mock 5 议题 eval（19/19 门禁）
 
 ## 已知限制 / 后续改进
 
-- 真实模型只做了 1 次 smoke，未做 5 议题 × 多轮真实 eval；行为质量以 mock 基线 + 单次真实 smoke 为证据。
+- 真实模型只做了 1 场完整 3 人 smoke，未做 5 议题 × 多轮真实 eval；行为质量以 mock 基线 + 单次真实 smoke 为证据。
 - 限流中间件未实现（本地单人场景，`RATE_LIMIT_ENABLED` 默认关）。
 - 视频/音频录制、语音、登录/多租户、多人协作、议题树、联网搜索均为非目标。
 - P1：导出、搜索/筛选、立场图谱、从洞察跳转发言、暂停/继续讨论。
@@ -200,6 +203,8 @@ E2E 用本机 Chrome（`channel: "chrome"`），不下载 Playwright 浏览器�
 - [Prompt 记录](docs/PROMPT-LOG.md) / [runtime prompts](docs/prompts/runtime/README.md)
 - [真实 smoke](docs/REAL-SMOKE.md)
 - [5 会话/20 SSE 压力报告](docs/PERF-REPORT.md)
+- [深度讨论与圆桌 UI 改版方案](docs/09-深度讨论与圆桌UI改版.md)
+- [QA 最终报告](docs/QA-REPORT.md)
 - [QA 报告](docs/QA-G2-REPORT.md)
 - [交付清单](docs/05-交付清单.md)
 

@@ -12,9 +12,9 @@
 | 门禁 | 结果 | 证据 |
 | --- | --- | --- |
 | TypeScript 全仓 | 通过 | `pnpm typecheck` |
-| 单元/组件/接口 | **141 passed**（agent 86 + web 36 + server 19） | `pnpm test` |
-| Playwright E2E | **20 passed / 0 failed / 0 skipped** | `E2E_STRICT=1` |
-| 真实 DeepSeek smoke | 12 轮 / 6 洞察 / 27s / 总结正常 | [REAL-SMOKE](REAL-SMOKE.md) |
+| 单元/组件/接口 | **162 passed**（agent 92 + web 42 + server 28） | `pnpm test` |
+| Playwright E2E | **35 passed / 0 failed / 0 skipped** | `E2E_STRICT=1` |
+| 真实 DeepSeek smoke | 36 轮 / 0 degraded / 184s / 7 洞察 / 30 条引用 | [REAL-SMOKE](REAL-SMOKE.md) |
 | Key 扫描 | 通过 | `pnpm check:key` |
 | 构建 | server + web 通过 | `pnpm build` |
 | 三档布局 | 1440 三栏不重叠；1024/390 无整页滚动 | `layout.stage.spec.ts` |

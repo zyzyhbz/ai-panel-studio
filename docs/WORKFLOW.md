@@ -32,7 +32,7 @@ G0 需求冻结 → G1 契约冻结 → G2 脚手架/mock 基线
 - **G2**：单仓脚手架、SQLite migration/seed、Fastify/Vite 骨架、mock 基线、Playwright 骨架。
 - **G3**：按垂直切片并行：创建/阵容 → 确认/开场 → 发言/SSE → 洞察 → 总结 → 回放 → 多会话 → 响应式。
 - **G4**：真实 DeepSeek smoke、行为 eval、E2E 主链路、SSE 断线/回放一致性。
-- **G5**：20 条 E2E、压力/安全/三档布局、Key 扫描、构建；0 P0/P1 才 RC。
+- **G5**：35 条 E2E、压力/安全/三档布局、Key 扫描、构建；0 P0/P1 才 RC。
 - **G6**：README、Prompt 记录、工作流、Git 历史、提交包。
 
 目录所有权固定：AI 改 `packages/agent`，后端改 `apps/server`，前端改 `apps/web`，测试改 `e2e`，PM 改 `docs`/根配置。共享文件不并发修改；PM 统一提交，提交历史按 `docs → schema → api → ui → tests → fix` 分层。
@@ -74,8 +74,8 @@ AI 可以很快地写代码，但它不会自动对“产品是否成立”负�
 
 ## 5. 实际结果
 
-- 全仓 typecheck 通过；agent 86、web 36、server 19 个测试通过；E2E **20/20**。
-- 真实 DeepSeek smoke：12 轮、6 条洞察、27 秒、总结正常，Key 无泄露。
+- 全仓 typecheck 通过；agent 92、web 42、server 28 个测试通过；E2E **35/35**。
+- 真实 DeepSeek smoke：36 轮、0 degraded、184 秒、7 条洞察、30 条引用，总结正常，Key 无泄露。
 - Prompt 记录：`docs/prompts/runtime/` 五份全文 + `docs/prompts/devlog/` 开发过程记录。
 - 已知限制：真实模型只做 1 次 smoke，未做 5 议题真实 eval；限流未实现；视频/语音/登录为非目标。
 
