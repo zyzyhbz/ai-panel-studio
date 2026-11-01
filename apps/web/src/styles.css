@@ -404,8 +404,9 @@
   .round-bubble {
     position: absolute;
     z-index: 3;
-    width: clamp(160px, 34%, 300px);
+    width: clamp(160px, 32%, 280px);
     transform: translate(-50%, -50%);
+    transform-origin: 50% 100%;
     padding: 9px 11px 10px;
     border: 1px solid var(--color-line-1);
     border-radius: 14px;
@@ -413,18 +414,44 @@
     backdrop-filter: blur(12px);
     box-shadow: 0 12px 28px -20px rgba(30, 24, 18, 0.4);
     pointer-events: none;
+    animation: bubble-grow-y 240ms var(--ease-out-soft, ease-out) both;
   }
 
   .round-bubble[data-phase="fading"] {
-    animation: bubble-fade 2s linear forwards;
+    animation: none;
   }
 
-  @keyframes bubble-fade {
+  /* The dialog grows away from the tail edge: bottom tail -> upward,
+     top tail -> downward; side tails grow horizontally. */
+  .round-bubble[data-tail-side="top"] {
+    transform-origin: 50% 0;
+  }
+
+  .round-bubble[data-tail-side="left"] {
+    transform-origin: 0 50%;
+    animation-name: bubble-grow-x;
+  }
+
+  .round-bubble[data-tail-side="right"] {
+    transform-origin: 100% 50%;
+    animation-name: bubble-grow-x;
+  }
+
+  @keyframes bubble-grow-y {
     from {
-      opacity: 1;
+      transform: translate(-50%, -50%) scaleY(0.55);
     }
     to {
-      opacity: 0;
+      transform: translate(-50%, -50%) scaleY(1);
+    }
+  }
+
+  @keyframes bubble-grow-x {
+    from {
+      transform: translate(-50%, -50%) scaleX(0.55);
+    }
+    to {
+      transform: translate(-50%, -50%) scaleX(1);
     }
   }
 

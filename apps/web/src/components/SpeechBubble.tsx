@@ -23,11 +23,21 @@ interface BubbleSpec {
 const BUBBLE_LIFETIME_MS = 2400;
 const FADE_MS = 2000;
 
-/** Place the bubble between the seat and the table centre (inward). */
+/** Place the bubble just outside the seat card, with a clear gap for the tail. */
 function bubblePoint(anchor: SeatPoint): SeatPoint {
+  const dx = anchor.x - 50;
+  const dy = anchor.y - 50;
+  if (Math.abs(dx) >= Math.abs(dy)) {
+    // Right-hand seat: the bubble's right edge stops just left of the card.
+    return {
+      x: anchor.x - Math.sign(dx) * (9 + 1 + 16),
+      y: anchor.y,
+    };
+  }
+  // Host above / expert below: stop the bubble just below/above the card.
   return {
-    x: 50 + (anchor.x - 50) * 0.56,
-    y: 50 + (anchor.y - 50) * 0.56,
+    x: anchor.x,
+    y: anchor.y - Math.sign(dy) * (7 + 1 + 7),
   };
 }
 
