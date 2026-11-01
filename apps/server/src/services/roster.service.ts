@@ -36,7 +36,12 @@ function toAppError(error: unknown): AppError {
       case "invalid_output":
         return new AppError("LLM_INVALID_OUTPUT", "模型输出无法解析，请重试");
       default:
-        return new AppError("ROSTER_GENERATION_FAILED", "阵容生成失败，请重试");
+        // Keep the upstream HTTP status: during the first `real` smoke this is what
+        // tells us whether the provider rejected a request field (400) or the
+        // network/route failed. No Key, prompt or stack ever goes into details.
+        return new AppError("ROSTER_GENERATION_FAILED", "阵容生成失败，请重试", {
+          ...(error.status ? { upstreamStatus: error.status } : {}),
+        });
     }
   }
   return new AppError("ROSTER_GENERATION_FAILED", "阵容生成失败，请重试");

@@ -143,6 +143,7 @@ export function createDiscussionService(
     const appError =
       error instanceof AppError ? error : new AppError("ROSTER_GENERATION_FAILED", "阵容生成失败，请重试");
     return new AppError(appError.code, appError.message, {
+      ...(appError.details ?? {}),
       discussionId: discussion.id,
       topic: discussion.topic,
       status: "failed",
