@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import type { AppContext } from "../context";
 import { toDiscussionDto, toExpertDto } from "../http/serializers";
 import {
+  archiveDiscussionSchema,
   createDiscussionSchema,
   eventsQuerySchema,
   idParamSchema,
@@ -98,5 +99,13 @@ export function registerDiscussionRoutes(app: FastifyInstance, ctx: AppContext):
       discussion: toDiscussionDto(result.discussion),
       accepted: result.accepted,
     };
+  });
+
+  app.post("/api/discussions/:id/archive", async (request, reply) => {
+    const { id } = parseInput(idParamSchema, request.params);
+    const body = parseInput(archiveDiscussionSchema, request.body ?? {});
+    const discussion = ctx.services.discussions.archive(id, body.archived);
+    reply.code(200);
+    return { discussion: toDiscussionDto(discussion) };
   });
 }

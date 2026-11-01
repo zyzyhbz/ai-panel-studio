@@ -88,6 +88,7 @@ export interface DiscussionService {
   get(id: string): DiscussionRecord;
   list(params: {
     status?: string;
+    archived?: "exclude" | "only" | "all";
     limit: number;
     offset: number;
   }): { items: DiscussionListItemDto[]; total: number };
@@ -96,6 +97,7 @@ export interface DiscussionService {
   regenerate(id: string): Promise<{ discussion: DiscussionRecord; experts: ExpertRecord[] }>;
   confirm(id: string): { discussion: DiscussionRecord; restarted: boolean };
   end(id: string): { discussion: DiscussionRecord; accepted: boolean };
+  archive(id: string, archived: boolean): DiscussionRecord;
 }
 
 export function createDiscussionService(
@@ -212,6 +214,7 @@ export function createDiscussionService(
       const statuses = parseStatusFilter(params.status);
       const { items, total } = repos.discussions.list({
         statuses,
+        archived: params.archived ?? "exclude",
         limit: params.limit,
         offset: params.offset,
       });
@@ -396,6 +399,13 @@ export function createDiscussionService(
             status: discussion.status,
           });
       }
+    },
+
+    archive(id, archived): DiscussionRecord {
+      get(id);
+      const result = repos.discussions.archive(id, clock(), archived);
+      if (!result) throw new AppError("NOT_FOUND", "讨论不存在", { discussionId: id });
+      return result;
     },
   };
 }

@@ -66,6 +66,7 @@ export interface DiscussionDto {
   updatedAt: string;
   startedAt: string | null;
   endedAt: string | null;
+  archivedAt: string | null;
   errorCode: string | null;
 }
 
@@ -114,6 +115,7 @@ export function toDiscussionDto(discussion: DiscussionRecord): DiscussionDto {
     updatedAt: discussion.updatedAt,
     startedAt: discussion.startedAt,
     endedAt: discussion.endedAt,
+    archivedAt: discussion.archivedAt,
     errorCode: discussion.errorCode,
   };
 }

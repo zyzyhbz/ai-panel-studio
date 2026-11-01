@@ -22,15 +22,17 @@ export type ListStatusFilter =
 
 export interface ListParams {
   status?: ListStatusFilter;
+  archived?: "exclude" | "only" | "all";
   limit?: number;
   offset?: number;
   signal?: AbortSignal;
 }
 
 export function listDiscussions(params: ListParams = {}): Promise<ListResponse> {
-  const { status = "all", limit = 50, offset = 0, signal } = params;
+  const { status = "all", archived = "exclude", limit = 50, offset = 0, signal } = params;
   const query = new URLSearchParams({
     status,
+    archived,
     limit: String(limit),
     offset: String(offset),
   });
@@ -91,6 +93,16 @@ export function endDiscussion(id: string): Promise<EndResponse> {
   return request<EndResponse>(`/discussions/${encodeURIComponent(id)}/end`, {
     method: "POST",
   });
+}
+
+export function archiveDiscussion(
+  id: string,
+  archived = true,
+): Promise<{ discussion: import("./types").Discussion }> {
+  return request<{ discussion: import("./types").Discussion }>(
+    `/discussions/${encodeURIComponent(id)}/archive`,
+    { method: "POST", body: { archived } },
+  );
 }
 
 export interface EventsParams {

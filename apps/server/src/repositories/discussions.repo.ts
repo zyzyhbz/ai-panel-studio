@@ -14,6 +14,7 @@ export interface CreateDiscussionInput {
 
 export interface ListDiscussionsParams {
   statuses?: readonly DiscussionStatus[];
+  archived?: "exclude" | "only" | "all";
   limit: number;
   offset: number;
 }
@@ -32,12 +33,13 @@ interface DiscussionRow {
   updated_at: string;
   started_at: string | null;
   ended_at: string | null;
+  archived_at: string | null;
   error_code: string | null;
   error_message: string | null;
 }
 
 const COLUMNS = `id, client_request_id, topic, status, expert_count, planned_turns, turn_count,
-  last_seq, qa_scenario, created_at, updated_at, started_at, ended_at, error_code, error_message`;
+  last_seq, qa_scenario, created_at, updated_at, started_at, ended_at, archived_at, error_code, error_message`;
 
 export function mapDiscussion(row: DiscussionRow): DiscussionRecord {
   return {
@@ -54,6 +56,7 @@ export function mapDiscussion(row: DiscussionRow): DiscussionRecord {
     updatedAt: row.updated_at,
     startedAt: row.started_at,
     endedAt: row.ended_at,
+    archivedAt: row.archived_at,
     errorCode: row.error_code,
     errorMessage: row.error_message,
   };
@@ -116,6 +119,9 @@ export function createDiscussionsRepo(db: Db) {
         where.push(`status IN (${params.statuses.map(() => "?").join(",")})`);
         args.push(...params.statuses);
       }
+      const archived = params.archived ?? "exclude";
+      if (archived === "exclude") where.push("archived_at IS NULL");
+      if (archived === "only") where.push("archived_at IS NOT NULL");
       const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
       const totalRow = db
         .prepare(`SELECT COUNT(*) AS c FROM discussions ${whereSql}`)
@@ -129,6 +135,14 @@ export function createDiscussionsRepo(db: Db) {
         )
         .all(...args, params.limit, params.offset) as DiscussionRow[];
       return { items: rows.map(mapDiscussion), total: totalRow.c };
+    },
+
+    archive(id: string, now: string, archived: boolean): DiscussionRecord | null {
+      const info = db
+        .prepare("UPDATE discussions SET archived_at = ?, updated_at = ? WHERE id = ?")
+        .run(archived ? now : null, now, id);
+      if (info.changes === 0) return null;
+      return this.getById(id);
     },
 
     /**

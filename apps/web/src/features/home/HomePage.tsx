@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, RotateCw } from "lucide-react";
+import { Archive, ArchiveRestore, Plus, RotateCw } from "lucide-react";
 
 import { friendlyMessage } from "../../api/client";
-import { listDiscussions } from "../../api/discussions";
+import { archiveDiscussion, listDiscussions } from "../../api/discussions";
 import type { DiscussionListItem } from "../../api/types";
 import { excerpt } from "../../domain/selectors";
 import { cn } from "../../lib/cn";
@@ -82,20 +82,37 @@ function AvatarStack({ item }: { item: DiscussionListItem }) {
   );
 }
 
-function DiscussionCard({ item, now }: { item: DiscussionListItem; now: number }) {
+function DiscussionCard({
+  item,
+  now,
+  onArchive,
+  busy,
+}: {
+  item: DiscussionListItem;
+  now: number;
+  onArchive?: (item: DiscussionListItem) => void;
+  busy?: boolean;
+}) {
   const max = item.maxTurns ?? 36;
   const progressLabel =
     max > 0 ? `${item.turnCount} / 上限 ${max} 轮` : `${item.turnCount} 轮`;
+  const archived = Boolean(item.archivedAt);
 
   return (
-    <Link
-      to={hrefFor(item)}
-      data-testid="discussion-card"
+    <article
       className={cn(
-        "group relative flex min-w-0 flex-col gap-3 overflow-hidden rounded-xl border border-line-1 bg-stage-900/50 p-4",
+        "group relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-line-1 bg-stage-900/50 p-4",
         "transition-colors duration-200 hover:border-line-2 hover:bg-stage-850/70",
+        archived && "opacity-75",
       )}
     >
+      <Link
+        to={hrefFor(item)}
+        aria-label={`打开讨论：${item.topic}`}
+        data-testid="discussion-card"
+        className="absolute inset-0 z-0 rounded-xl"
+      />
+      <div className="pointer-events-none relative z-10 flex h-full flex-col gap-3">
       <span
         aria-hidden
         className="absolute inset-y-0 left-0 w-[3px] bg-ink-4/40 group-hover:bg-live/70"
@@ -134,15 +151,35 @@ function DiscussionCard({ item, now }: { item: DiscussionListItem; now: number }
         </span>
       </div>
 
-      <div className="flex items-center justify-between border-t border-line-1 pt-2">
+      <div className="flex items-center justify-between gap-2 border-t border-line-1 pt-2">
         <span className="text-[11px] text-ink-4">
           {item.expertCount} 位专家 · {item.turnCount} 轮发言
         </span>
-        <span className="text-[11px] font-medium text-live opacity-0 transition-opacity group-hover:opacity-100">
-          {ctaLabel(item)} →
+        <span className="ml-auto flex items-center gap-2">
+          <span className="text-[11px] font-medium text-live opacity-0 transition-opacity group-hover:opacity-100">
+            {ctaLabel(item)} →
+          </span>
+          {onArchive && (
+            <button
+              type="button"
+              onClick={() => onArchive(item)}
+              disabled={busy}
+              aria-label={archived ? "取消归档" : "归档讨论"}
+              title={archived ? "取消归档" : "归档讨论"}
+              data-testid="archive-discussion"
+              className="pointer-events-auto inline-flex size-7 items-center justify-center rounded-md border border-line-1 text-ink-4 transition-colors hover:border-line-2 hover:text-ink-1 disabled:opacity-40"
+            >
+              {archived ? (
+                <ArchiveRestore className="size-3.5" aria-hidden />
+              ) : (
+                <Archive className="size-3.5" aria-hidden />
+              )}
+            </button>
+          )}
         </span>
       </div>
-    </Link>
+      </div>
+    </article>
   );
 }
 
@@ -163,10 +200,11 @@ export function HomePage() {
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const [archivingId, setArchivingId] = useState<string | null>(null);
 
   const load = useCallback(async (signal?: AbortSignal) => {
     try {
-      const data = await listDiscussions({ status: "all", limit: 50, signal });
+      const data = await listDiscussions({ status: "all", archived: "all", limit: 50, signal });
       setItems(data.items ?? []);
       setStatus("ready");
       setError(null);
@@ -205,9 +243,26 @@ export function HomePage() {
     };
   }, [load]);
 
-  const active = items.filter((item) => groupOf(item) === "active");
-  const ended = items.filter((item) => groupOf(item) === "ended");
-  const failed = items.filter((item) => groupOf(item) === "failed");
+  const archivedItems = items.filter((item) => Boolean(item.archivedAt));
+  const visibleItems = items.filter((item) => !item.archivedAt);
+  const active = visibleItems.filter((item) => groupOf(item) === "active");
+  const ended = visibleItems.filter((item) => groupOf(item) === "ended");
+  const failed = visibleItems.filter((item) => groupOf(item) === "failed");
+
+  const toggleArchive = async (item: DiscussionListItem) => {
+    setArchivingId(item.id);
+    try {
+      await archiveDiscussion(item.id, !item.archivedAt);
+      await load();
+    } catch (cause) {
+      setError(friendlyMessage(cause));
+    } finally {
+      setArchivingId(null);
+    }
+  };
+
+  const canArchive = (item: DiscussionListItem): boolean =>
+    Boolean(item.archivedAt) || item.status === "ended" || item.status === "failed";
 
   const retry = () => {
     setStatus("loading");
@@ -321,7 +376,13 @@ export function HomePage() {
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {active.map((item) => (
-              <DiscussionCard key={item.id} item={item} now={now} />
+              <DiscussionCard
+                key={item.id}
+                item={item}
+                now={now}
+                onArchive={canArchive(item) ? (target) => void toggleArchive(target) : undefined}
+                busy={archivingId === item.id}
+              />
             ))}
           </div>
         </section>
@@ -334,7 +395,13 @@ export function HomePage() {
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {ended.map((item) => (
-              <DiscussionCard key={item.id} item={item} now={now} />
+              <DiscussionCard
+                key={item.id}
+                item={item}
+                now={now}
+                onArchive={canArchive(item) ? (target) => void toggleArchive(target) : undefined}
+                busy={archivingId === item.id}
+              />
             ))}
           </div>
         </section>
@@ -347,7 +414,32 @@ export function HomePage() {
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {failed.map((item) => (
-              <DiscussionCard key={item.id} item={item} now={now} />
+              <DiscussionCard
+                key={item.id}
+                item={item}
+                now={now}
+                onArchive={canArchive(item) ? (target) => void toggleArchive(target) : undefined}
+                busy={archivingId === item.id}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {archivedItems.length > 0 && (
+        <section className="mt-10 border-t border-line-1 pt-6">
+          <h2 className="mb-3 text-[11px] font-semibold tracking-[0.16em] text-ink-4">
+            已归档 · {archivedItems.length}
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {archivedItems.map((item) => (
+              <DiscussionCard
+                key={item.id}
+                item={item}
+                now={now}
+                onArchive={canArchive(item) ? (target) => void toggleArchive(target) : undefined}
+                busy={archivingId === item.id}
+              />
             ))}
           </div>
         </section>

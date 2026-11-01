@@ -18,8 +18,13 @@ export const createDiscussionSchema = z.object({
 
 export const listDiscussionsSchema = z.object({
   status: z.string().optional(),
+  archived: z.enum(["exclude", "only", "all"]).default("exclude"),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
+});
+
+export const archiveDiscussionSchema = z.object({
+  archived: z.boolean().default(true),
 });
 
 export const eventsQuerySchema = z.object({

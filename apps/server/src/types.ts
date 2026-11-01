@@ -20,6 +20,7 @@ export interface DiscussionRecord {
   updatedAt: string;
   startedAt: string | null;
   endedAt: string | null;
+  archivedAt: string | null;
   errorCode: string | null;
   errorMessage: string | null;
 }

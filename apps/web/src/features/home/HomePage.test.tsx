@@ -61,7 +61,7 @@ describe("HomePage", () => {
     expect(screen.getByText("最近结束")).toBeInTheDocument();
     expect(screen.getByText("进行中的议题")).toBeInTheDocument();
     // ended cards link straight to the replay route
-    const endedCard = screen.getByText("已结束的议题").closest("a");
+    const endedCard = screen.getByRole("link", { name: /已结束的议题/ });
     expect(endedCard).toHaveAttribute("href", "/d/d_done/replay");
   });
 
