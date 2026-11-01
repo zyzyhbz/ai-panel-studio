@@ -19,6 +19,7 @@
 | 构建 | server + web 通过 | `pnpm build` |
 | 三档布局 | 1440 三栏不重叠；1024/390 无整页滚动 | `layout.stage.spec.ts` |
 | 多会话隔离 | server 集成测试覆盖 | `isolation.test.ts` |
+| 5 会话 / 20 SSE 压力 | **PASS**：20 连接、0 串线、p95 2ms（mock） | [PERF-REPORT](PERF-REPORT.md) |
 
 ## 2. 覆盖范围
 
@@ -41,7 +42,7 @@
 
 ## 4. 未覆盖 / 已知限制
 
-- **未做 5 会话/20 SSE 门禁级压力测试**：server 有隔离/补发测试，E2E 有双会话场景，但没有完整压测报告；这是 RC 的已知缺口。
+- **5 会话/20 SSE 压力测试已补做并通过**：20/20 连接、0 串线、0 seq 异常、5/5 ended、p95 2ms（mock）；见 [PERF-REPORT](PERF-REPORT.md)。该结果不证明真实模型吞吐。
 - 真实模型只做 1 次 smoke，未做 5 议题真实 eval；行为质量以 mock eval（15/15）+ 单次真实 smoke 为证据。
 - P1 未实现：导出、搜索/筛选、立场图谱、洞察跳转发言、暂停/继续、单独重生成专家。
 - 限流中间件未实现（本地单人；`RATE_LIMIT_ENABLED` 默认关）。

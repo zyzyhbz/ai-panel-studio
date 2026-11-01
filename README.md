@@ -11,6 +11,7 @@
 | 全仓 typecheck | 通过 |
 | 单测/组件/接口测试 | agent 86 + web 36 + server 19 |
 | Playwright E2E | **20 passed / 0 failed / 0 skipped** |
+| 5 会话 / 20 SSE 压力 | **PASS**：20 连接、0 串线、p95 2ms（mock） |
 | 真实 DeepSeek smoke | 12 轮 / 6 洞察 / 27s / 总结正常 |
 | Key 扫描 | 无 Key 材料进入前端产物 |
 | 截止 | 2026-11-02（内部 17:00 提交） |
@@ -196,6 +197,7 @@ E2E 用本机 Chrome（`channel: "chrome"`），不下载 Playwright 浏览器�
 - [工作流说明](docs/WORKFLOW.md)
 - [Prompt 记录](docs/PROMPT-LOG.md) / [runtime prompts](docs/prompts/runtime/README.md)
 - [真实 smoke](docs/REAL-SMOKE.md)
+- [5 会话/20 SSE 压力报告](docs/PERF-REPORT.md)
 - [QA 报告](docs/QA-G2-REPORT.md)
 - [交付清单](docs/05-交付清单.md)
 
