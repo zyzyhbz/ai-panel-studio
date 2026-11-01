@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type MobileTab = "discussion" | "experts" | "insights";
+export type MobileTab = "table" | "log" | "insights";
 export type ReplaySpeed = 1 | 1.5 | 2;
 
 const SPEED_KEY = "ai-panel.replay-speed";
@@ -35,7 +35,7 @@ interface UiState {
 }
 
 export const useUiStore = create<UiState>((set) => ({
-  mobileTab: "discussion",
+  mobileTab: "table",
   insightDrawerOpen: false,
   replaySpeed: readSpeed(),
   setMobileTab: (mobileTab) => set({ mobileTab }),

@@ -1,14 +1,14 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useReducedMotion } from "../../lib/useReducedMotion";
-import { ArrowLeft, Layers, MessageSquare, Users } from "lucide-react";
+import { Layers, MessageSquare, Users } from "lucide-react";
 
 import { friendlyMessage } from "../../api/client";
 import { getAllEvents, getDiscussion } from "../../api/discussions";
 import type { DiscussionDetail, PersistedEvent } from "../../api/types";
-import { ExpertRail } from "../../components/ExpertRail";
+import { ExpertList } from "../../components/ExpertList";
 import { InsightPanel } from "../../components/InsightPanel";
 import { ReplayBar } from "../../components/PlaybackBar";
+import { RoundTable } from "../../components/RoundTable";
 import { StageHeader } from "../../components/StageHeader";
 import { SummaryCard } from "../../components/SummaryCard";
 import { Transcript } from "../../components/Transcript";
@@ -16,7 +16,13 @@ import { Button } from "../../components/ui/Button";
 import { EmptyState, ErrorState, Skeleton } from "../../components/ui/States";
 import { reduceEvents } from "../../domain/reducer";
 import { emptySession, type SessionView } from "../../domain/session";
+import {
+  convergenceOf,
+  deriveAllStatuses,
+  progressOf,
+} from "../../domain/selectors";
 import { StreamBuffer } from "../../domain/streamBuffer";
+import { useReducedMotion } from "../../lib/useReducedMotion";
 import { useStickyScroll } from "../../lib/useStickyScroll";
 import { useViewport } from "../../lib/useViewport";
 import { useUiStore, type MobileTab, type ReplaySpeed } from "../../stores/uiStore";
@@ -25,39 +31,30 @@ const MIN_STEP_MS = 150;
 const MAX_STEP_MS = 2000;
 
 const TABS: Array<{ key: MobileTab; label: string; icon: typeof Users }> = [
-  { key: "discussion", label: "讨论", icon: MessageSquare },
-  { key: "experts", label: "专家", icon: Users },
+  { key: "table", label: "圆桌", icon: Users },
+  { key: "log", label: "实录", icon: MessageSquare },
   { key: "insights", label: "共识", icon: Layers },
 ];
 
-interface ReplayData {
-  detail: DiscussionDetail;
-  events: PersistedEvent[];
-  base: SessionView;
-}
-
-function frameDelay(
-  events: PersistedEvent[],
-  cursor: number,
-  speed: ReplaySpeed,
-): number {
+function frameDelay(events: PersistedEvent[], cursor: number, speed: ReplaySpeed): number {
   const next = events[cursor];
   const prev = events[cursor - 1];
   if (!next) return 0;
   const nextAt = Date.parse(next.createdAt);
   const prevAt = prev ? Date.parse(prev.createdAt) : nextAt;
   const raw = Number.isFinite(nextAt) && Number.isFinite(prevAt) ? nextAt - prevAt : 0;
-  const clamped = Math.min(MAX_STEP_MS, Math.max(MIN_STEP_MS, raw));
-  return Math.round(clamped / speed);
+  return Math.round(Math.min(MAX_STEP_MS, Math.max(MIN_STEP_MS, raw)) / speed);
 }
 
 export function ReplayPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const viewport = useViewport();
-  const reducedMotion = useReducedMotion() ?? false;
+  const reducedMotion = useReducedMotion();
 
-  const [data, setData] = useState<ReplayData | null>(null);
+  const [detail, setDetail] = useState<DiscussionDetail | null>(null);
+  const [events, setEvents] = useState<PersistedEvent[]>([]);
+  const [base, setBase] = useState<SessionView | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -71,6 +68,7 @@ export function ReplayPage() {
 
   const [cursor, setCursor] = useState(1);
   const [playing, setPlaying] = useState(false);
+  const [expertsOpen, setExpertsOpen] = useState(false);
   const [highlightMessageId, setHighlightMessageId] = useState<string | null>(null);
 
   const bufferRef = useRef<StreamBuffer | null>(null);
@@ -78,7 +76,7 @@ export function ReplayPage() {
   const buffer = bufferRef.current;
 
   const sticky = useStickyScroll(reducedMotion);
-  const isMobile = viewport === "mobile";
+  const tabbed = viewport === "mobile" || viewport === "tablet";
   const isWide = viewport === "wide";
 
   useEffect(() => {
@@ -88,22 +86,23 @@ export function ReplayPage() {
     setError(null);
 
     Promise.all([getDiscussion(id), getAllEvents(id)])
-      .then(([detail, events]) => {
+      .then(([loadedDetail, loadedEvents]) => {
         if (cancelled) return;
-        const status = detail.discussion.status;
+        const status = loadedDetail.discussion.status;
         if (status !== "ended" && status !== "failed") {
           navigate(`/d/${id}`, { replace: true });
           return;
         }
-        const base: SessionView = {
+        setDetail(loadedDetail);
+        setEvents(loadedEvents);
+        setBase({
           ...emptySession(id),
-          topic: detail.discussion.topic,
-          expertCount: detail.discussion.expertCount,
-          plannedTurns: detail.discussion.plannedTurns ?? 0,
-          maxTurns: detail.discussion.maxTurns ?? 0,
-        };
-        setData({ detail, events, base });
-        setCursor(events.length > 0 ? 1 : 0);
+          topic: loadedDetail.discussion.topic,
+          expertCount: loadedDetail.discussion.expertCount,
+          plannedTurns: loadedDetail.discussion.plannedTurns ?? 0,
+          maxTurns: loadedDetail.discussion.maxTurns ?? 0,
+        });
+        setCursor(loadedEvents.length > 0 ? 1 : 0);
         setLoading(false);
       })
       .catch((cause: unknown) => {
@@ -117,38 +116,37 @@ export function ReplayPage() {
     };
   }, [id, navigate]);
 
-  const events = data?.events ?? [];
-
   const view = useMemo<SessionView>(() => {
-    const base = data?.base ?? emptySession(id ?? "");
-    return reduceEvents(base, events.slice(0, cursor));
-  }, [data, events, cursor, id]);
-
-  const totalTurns = useMemo(
-    () => events.filter((event) => event.type === "message.completed").length,
-    [events],
-  );
+    const from = base ?? emptySession(id ?? "");
+    return reduceEvents(from, events.slice(0, cursor));
+  }, [base, events, cursor, id]);
 
   const atEnd = cursor >= events.length;
 
   useEffect(() => {
-    if (!playing || !data) return;
+    if (!playing) return;
     if (cursor >= events.length) {
       setPlaying(false);
       return;
     }
-    const delay = frameDelay(events, cursor, speed);
     const timer = window.setTimeout(() => {
       setCursor((current) => Math.min(events.length, current + 1));
-    }, Math.max(40, delay));
+    }, Math.max(40, frameDelay(events, cursor, speed)));
     return () => window.clearTimeout(timer);
-  }, [playing, cursor, events, speed, data]);
+  }, [playing, cursor, events, speed]);
 
   useEffect(() => {
     if (!highlightMessageId) return;
     const timer = window.setTimeout(() => setHighlightMessageId(null), 2400);
     return () => window.clearTimeout(timer);
   }, [highlightMessageId]);
+
+  const statuses = useMemo(
+    () => deriveAllStatuses(view, null, false, null, true),
+    [view],
+  );
+  const convergence = useMemo(() => convergenceOf(view), [view]);
+  const progress = useMemo(() => progressOf(view), [view]);
 
   const toggle = useCallback(() => {
     if (cursor >= events.length) {
@@ -191,14 +189,14 @@ export function ReplayPage() {
     );
   }
 
-  if (error || !data) {
+  if (error || !detail) {
     return (
       <ErrorState
         title="无法打开回放"
         message={error ?? "这场讨论没有可回放的内容。"}
         action={
           <Link to="/">
-            <Button>返回首页</Button>
+            <Button>返回大厅</Button>
           </Link>
         }
       />
@@ -212,7 +210,7 @@ export function ReplayPage() {
         description="事件日志为空，可能这场讨论在开始前就被中止了。"
         action={
           <Link to="/">
-            <Button>返回首页</Button>
+            <Button>返回大厅</Button>
           </Link>
         }
       />
@@ -224,24 +222,16 @@ export function ReplayPage() {
       <StageHeader
         view={view}
         insightCount={view.insights.length}
+        expertCount={view.roster.length}
         replay
+        onBack={() => navigate("/")}
+        onToggleExperts={() => setExpertsOpen((open) => !open)}
         onToggleInsights={isWide ? undefined : () => toggleDrawer()}
       />
 
       <aside
-        className="studio-rail"
-        data-tab-active={isMobile ? mobileTab === "experts" : undefined}
-      >
-        <ExpertRail
-          view={view}
-          buffer={buffer}
-          density={viewport === "tablet" ? "compact" : "full"}
-        />
-      </aside>
-
-      <div
-        className="studio-stage flex min-h-0 flex-col"
-        data-tab-active={isMobile ? mobileTab === "discussion" : undefined}
+        className="studio-log"
+        data-tab-active={tabbed ? mobileTab === "log" : undefined}
       >
         <Transcript
           view={view}
@@ -250,20 +240,37 @@ export function ReplayPage() {
           highlightMessageId={highlightMessageId}
           onSummaryJump={jumpToSummary}
           className="flex-1"
-          footer={
-            <SummaryCard summary={view.summary} status={view.status} />
-          }
+          footer={<SummaryCard summary={view.summary} status={view.status} />}
+        />
+      </aside>
+
+      <div
+        className="studio-table flex min-h-0 flex-col"
+        data-tab-active={tabbed ? mobileTab === "table" : undefined}
+      >
+        <RoundTable
+          view={view}
+          statuses={statuses}
+          convergence={convergence}
+          progress={progress}
+        />
+        <ExpertList
+          view={view}
+          statuses={statuses}
+          open={expertsOpen}
+          onToggle={() => setExpertsOpen((open) => !open)}
         />
       </div>
 
       <aside
         className="studio-insights"
         data-open={drawerOpen}
-        data-tab-active={isMobile ? mobileTab === "insights" : undefined}
+        data-tab-active={tabbed ? mobileTab === "insights" : undefined}
       >
         <InsightPanel
           insights={view.insights}
           onEvidenceClick={setHighlightMessageId}
+          onOpenTranscript={() => setMobileTab("log")}
           className="h-full"
         />
       </aside>
@@ -283,15 +290,19 @@ export function ReplayPage() {
         step={Math.max(0, cursor - 1)}
         totalSteps={events.length}
         speed={speed}
-        chapterLabel={`第 ${view.turnCount} / ${totalTurns} 轮`}
+        chapterLabel={`第 ${view.turnCount} 轮`}
         onToggle={toggle}
         onSpeed={setSpeed}
         onSeek={(step) => seek(step + 1)}
         onRestart={restart}
       />
 
-      {isMobile && (
-        <nav role="tablist" aria-label="演播厅视图" className="studio-tabbar flex h-14 items-stretch border-t border-line-1 bg-stage-950/95">
+      {tabbed && (
+        <nav
+          role="tablist"
+          aria-label="回放视图"
+          className="studio-tabbar flex h-14 items-stretch border-t border-line-1 bg-stage-950/95"
+        >
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const selected = mobileTab === tab.key;
@@ -312,14 +323,6 @@ export function ReplayPage() {
           })}
         </nav>
       )}
-
-      <Link
-        to="/"
-        className="fixed top-4 left-4 z-40 hidden items-center gap-1.5 text-[11px] text-ink-3 transition-colors hover:text-ink-1 md:flex"
-      >
-        <ArrowLeft className="size-3.5" aria-hidden />
-        首页
-      </Link>
     </div>
   );
 }

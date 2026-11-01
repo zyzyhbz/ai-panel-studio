@@ -7,6 +7,11 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
+    watch: {
+      // Atomic CSS writes create short-lived temp dirs; watching them crashes
+      // Vite on Windows with EBUSY. They are build artifacts, not source.
+      ignored: ["**/.styles.css.*.tmpdir/**", "**/*.tmpdir/**"],
+    },
     proxy: {
       "/api": {
         target: "http://127.0.0.1:3001",

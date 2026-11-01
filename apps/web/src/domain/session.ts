@@ -41,6 +41,8 @@ export interface SessionView {
   insights: Insight[];
   summary: Summary | null;
   activeTurn: ActiveTurn | null;
+  /** When the current turn started (ISO). Used for 准备发言 → 思考中. */
+  turnStartedAt: string | null;
   startedAt: string | null;
   endedAt: string | null;
   summarizing: { reason: "user" | "auto"; startedAt: string } | null;
@@ -63,6 +65,7 @@ export function emptySession(discussionId: string): SessionView {
     insights: [],
     summary: null,
     activeTurn: null,
+    turnStartedAt: null,
     startedAt: null,
     endedAt: null,
     summarizing: null,
@@ -137,6 +140,7 @@ export function hydrate(view: SessionView, input: HydrateInput): SessionView {
     insights: input.insights,
     summary: input.summary,
     activeTurn: terminal ? null : (input.activeTurn ?? null),
+    turnStartedAt: terminal ? null : (input.activeTurn ? view.turnStartedAt : null),
     startedAt: discussion.startedAt ?? view.startedAt,
     endedAt: discussion.endedAt ?? view.endedAt,
     failure:

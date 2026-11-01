@@ -29,6 +29,7 @@ function TransportShell({
 export function LiveBar({
   turnCount,
   insightCount,
+  status,
   sticky,
   visible,
   onReplay,
@@ -37,6 +38,7 @@ export function LiveBar({
 }: {
   turnCount: number;
   insightCount: number;
+  status?: "generating" | "ready" | "live" | "summarizing" | "ended" | "failed";
   sticky: StickyScroll;
   visible: boolean;
   onReplay?: () => void;
@@ -44,12 +46,20 @@ export function LiveBar({
   inline?: boolean;
 }) {
   if (!visible) return null;
+  const ended = status === "ended" || status === "failed";
+  const label = ended ? "已结束" : status === "summarizing" ? "正在收尾" : "直播中";
 
   return (
     <TransportShell inline={inline}>
       <span className="flex items-center gap-2 text-[11px] text-ink-3">
-        <span aria-hidden className="live-dot size-1.5 rounded-full bg-live" />
-        直播中
+        <span
+          aria-hidden
+          className={cn(
+            "size-1.5 rounded-full",
+            ended ? "bg-ink-4" : "live-dot bg-live",
+          )}
+        />
+        {label}
         <span className="text-ink-4">·</span>
         <span className="tabular-nums">第 {turnCount} 轮</span>
         <span className="text-ink-4">·</span>

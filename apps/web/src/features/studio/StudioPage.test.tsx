@@ -3,7 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 
-import { confirmDiscussion, getDiscussion } from "../../api/discussions";
+import { confirmDiscussion, endDiscussion, getDiscussion } from "../../api/discussions";
 import { makeDetail, makeMessage } from "../../test/fixtures";
 import { StudioPage } from "./StudioPage";
 
@@ -195,11 +195,67 @@ describe("StudioPage after confirm (BUG-01)", () => {
     await user.click(await screen.findByTestId("confirm-roster"));
 
     expect(await screen.findByText("主持人即将开场…")).toBeInTheDocument();
-    expect(screen.getByTestId("expert-rail")).toBeInTheDocument();
+    expect(screen.getByTestId("round-table")).toBeInTheDocument();
     expect(screen.queryByTestId("confirm-roster")).not.toBeInTheDocument();
   });
 
-  it("renders the rail, the transcript and the insights panel as siblings", async () => {
+  it("always offers a way back to the lobby, without ending the discussion", async () => {
+    const user = userEvent.setup();
+    let call = 0;
+    mockedGet.mockImplementation(async () => {
+      call += 1;
+      return call === 1 ? readyDetail() : liveDetail();
+    });
+    mockedConfirm.mockResolvedValue({
+      discussion: { ...liveDetail().discussion, status: "live" },
+    });
+    const endSpy = vi.mocked(endDiscussion);
+
+    render(
+      <MemoryRouter initialEntries={[`/d/${ID}`]}>
+        <Routes>
+          <Route path="/" element={<div data-testid="home-marker">大厅</div>} />
+          <Route path="/d/:id" element={<StudioPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await user.click(await screen.findByTestId("confirm-roster"));
+
+    const back = await screen.findByTestId("back-to-lobby");
+    await user.click(back);
+
+    expect(await screen.findByTestId("home-marker")).toBeInTheDocument();
+    // Leaving must never call POST /end — the runner keeps going.
+    expect(endSpy).not.toHaveBeenCalled();
+  });
+
+  it("labels every seat with an explicit agent status, not just a colour", async () => {
+    const user = userEvent.setup();
+    let call = 0;
+    mockedGet.mockImplementation(async () => {
+      call += 1;
+      return call === 1 ? readyDetail() : liveDetail();
+    });
+    mockedConfirm.mockResolvedValue({
+      discussion: { ...liveDetail().discussion, status: "live" },
+    });
+
+    renderStudio();
+    await user.click(await screen.findByTestId("confirm-roster"));
+
+    const seats = document.querySelectorAll('[data-testid^="seat-"][data-expert]');
+    expect(seats.length).toBe(3);
+
+    const allowed = ["待机", "思考中", "准备发言", "发言中", "已结束"];
+    for (const seat of seats) {
+      const status = seat.querySelector('[data-testid="seat-status"]');
+      expect(status, "every seat must show a text status").not.toBeNull();
+      expect(allowed).toContain(status?.textContent?.trim());
+    }
+  });
+
+  it("renders the transcript, the round table and the insights as siblings", async () => {
     const user = userEvent.setup();
     let call = 0;
     mockedGet.mockImplementation(async () => {
@@ -218,22 +274,21 @@ describe("StudioPage after confirm (BUG-01)", () => {
     );
     const shell = container.querySelector(".studio-shell") as HTMLElement;
 
-    const rail = shell.querySelector(":scope > .studio-rail");
-    const stage = shell.querySelector(":scope > .studio-stage");
+    const log = shell.querySelector(":scope > .studio-log");
+    const table = shell.querySelector(":scope > .studio-table");
     const insights = shell.querySelector(":scope > .studio-insights");
 
     // All three must be direct grid children — nesting one inside another is
     // what produced the "only the insight panel is visible" layout bug.
-    expect(rail).not.toBeNull();
-    expect(stage).not.toBeNull();
+    expect(log).not.toBeNull();
+    expect(table).not.toBeNull();
     expect(insights).not.toBeNull();
-    expect(rail?.contains(stage as Node)).toBe(false);
-    expect(stage?.contains(insights as Node)).toBe(false);
-    expect(rail?.contains(insights as Node)).toBe(false);
+    expect(log?.contains(table as Node)).toBe(false);
+    expect(table?.contains(insights as Node)).toBe(false);
+    expect(log?.contains(insights as Node)).toBe(false);
 
     // And each one owns its own scroll container.
-    expect(rail?.querySelector(".scroll-y")).not.toBeNull();
-    expect(stage?.querySelector(".scroll-y")).not.toBeNull();
+    expect(log?.querySelector(".scroll-y")).not.toBeNull();
     expect(insights?.querySelector(".scroll-y")).not.toBeNull();
   });
 });

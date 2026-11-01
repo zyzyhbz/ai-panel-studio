@@ -37,6 +37,11 @@ function StudioBody() {
     navigate(`/d/${view.discussionId}/replay`);
   }, [navigate, view.discussionId]);
 
+  // Leaving mid-discussion must NOT end it — the runner keeps going server-side.
+  const backToLobby = useCallback(() => {
+    navigate("/");
+  }, [navigate]);
+
   // The lobby owns generating/ready/failed-before-any-speech.
   const showLobby =
     view.status === "ready" ||
@@ -51,6 +56,7 @@ function StudioBody() {
 
   return (
     <StageView
+      onBack={backToLobby}
       onReplay={view.status === "ended" || view.status === "failed" ? openReplay : null}
     />
   );

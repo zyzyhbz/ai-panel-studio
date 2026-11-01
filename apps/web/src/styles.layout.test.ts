@@ -3,21 +3,19 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
- * Layout contract tests for the studio shell.
+ * Layout + palette contract tests.
  *
- * jsdom has no layout engine, so these assertions read `styles.css` and check
- * the *declarations* that the three-stage grid depends on. This is exactly the
- * regression that shipped once already: `grid-template-areas` named `rail` and
- * `insights`, but every child still declared `grid-area: stage`, so all three
- * panels landed on top of each other and only the last one was visible.
- *
- * A real boundingBox assertion needs a browser; these tests fail loudly if the
- * grid contract is broken again, which is the part a unit test can own.
+ * jsdom has no layout engine, so a `getBoundingClientRect` assertion would be
+ * permanently 0×0 and vacuously green. These tests read `styles.css` and
+ * assert the declarations the round-table shell depends on. They are the
+ * regression net for two defects that already shipped once:
+ *   1. `grid-template-areas` named rail/insights while every child kept
+ *      `grid-area: stage` → all three panels stacked on top of each other;
+ *   2. a single dark palette with no switchable tokens.
  */
 
 const css = readFileSync(resolve(process.cwd(), "src/styles.css"), "utf8");
 
-/** Return the body of the first `opener { … }` block, brace-matched. */
 function blockOf(source: string, opener: string): string {
   const start = source.indexOf(opener);
   if (start < 0) throw new Error(`missing block: ${opener}`);
@@ -34,7 +32,6 @@ function blockOf(source: string, opener: string): string {
   throw new Error(`unbalanced block: ${opener}`);
 }
 
-/** `grid-template-areas` rows as arrays of area names. */
 function templateRows(block: string): string[][] {
   const match = /grid-template-areas:\s*([\s\S]*?);/.exec(block);
   if (!match) throw new Error("grid-template-areas not found");
@@ -43,11 +40,6 @@ function templateRows(block: string): string[][] {
   );
 }
 
-/**
- * Last-wins scan of every `.studio-* { … grid-area: x }` rule in file order.
- * The min-width media queries are authored in ascending order, so the final
- * value per selector is the one that applies at the widest breakpoint.
- */
 function gridAreaBySelector(source: string): Map<string, string> {
   const map = new Map<string, string>();
   const rule = /\.(studio-[a-z-]+)\s*\{([^}]*)\}/g;
@@ -59,87 +51,188 @@ function gridAreaBySelector(source: string): Map<string, string> {
   return map;
 }
 
+function declarations(block: string): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const m of block.matchAll(/(--color-[a-z0-9-]+):\s*([^;]+);/g)) {
+    map.set(m[1], m[2].trim());
+  }
+  return map;
+}
+
 const base = blockOf(css, "@layer components {");
-const mobile = blockOf(css, "@media (max-width: 47.9375rem)");
-const tablet = blockOf(css, "@media (min-width: 48rem)");
+const baseLayer = blockOf(css, "@layer base {");
+const tabMode = blockOf(css, "@media (max-width: 63.9375rem)");
 const desktop = blockOf(css, "@media (min-width: 64rem)");
 const wide = blockOf(css, "@media (min-width: 90rem)");
 
-describe("studio shell grid contract", () => {
-  it("declares three distinct columns at ≥1440 and assigns every region", () => {
-    const rows = templateRows(wide);
-    expect(rows[1]).toEqual(["rail", "stage", "insights"]);
+describe("round-table shell layout", () => {
+  it("gives each column its own grid area at ≥1440", () => {
+    expect(templateRows(wide)[1]).toEqual(["log", "table", "insights"]);
 
-    expect(tablet).toMatch(/\.studio-rail\s*\{[^}]*grid-area:\s*rail/);
-    expect(tablet).toMatch(/\.studio-stage\s*\{[^}]*grid-area:\s*stage/);
-    expect(wide).toMatch(/\.studio-insights\s*\{[^}]*grid-area:\s*insights/);
-  });
-
-  it("never lets two panels claim the same grid area at ≥1440", () => {
     const areas = gridAreaBySelector(css);
     const used = [
-      areas.get("studio-rail"),
-      areas.get("studio-stage"),
+      areas.get("studio-log"),
+      areas.get("studio-table"),
       areas.get("studio-insights"),
     ];
-
     expect(used.every(Boolean)).toBe(true);
     expect(new Set(used).size).toBe(3);
   });
 
-  it("has one child per named area in every desktop template", () => {
+  it("backs every named area with an owning panel", () => {
     const areas = gridAreaBySelector(css);
+    for (const area of new Set(templateRows(wide).flat())) {
+      if (area === "header" || area === "footer" || area === "tabbar") continue;
+      const owners = [...areas.entries()].filter(([, value]) => value === area);
+      expect(owners, `area "${area}" has no owning panel`).not.toHaveLength(0);
+    }
+  });
 
-    // 64rem only narrows the rail width; it inherits the 48rem template.
+  it("turns the panels into tabs below 1024 instead of overlapping them", () => {
+    expect(tabMode).toMatch(
+      /\.studio-log\[data-tab-active="false"\][\s\S]*?\{\s*display:\s*none/,
+    );
+    expect(tabMode).toMatch(
+      /\.studio-table\[data-tab-active="false"\][\s\S]*?\{\s*display:\s*none/,
+    );
+    // 1024–1439 keeps the transcript column and a drawer for insights.
+    expect(desktop).toMatch(/grid-template-columns:\s*clamp\(300px/);
+    expect(desktop).toMatch(/\.studio-insights\s*\{[^}]*position:\s*fixed/);
+    expect(wide).toMatch(/\.studio-insights\s*\{[^}]*position:\s*static/);
+  });
+
+  it("never scrolls the page itself at any width", () => {
+    expect(baseLayer).toMatch(/body\s*\{[^}]*overflow:\s*hidden/);
+    expect(baseLayer).toMatch(/html,\s*body,\s*#root\s*\{[^}]*height:\s*100%/);
+    expect(baseLayer).toMatch(/\.scroll-y\s*\{[^}]*overflow-y:\s*auto/);
+    expect(base).toMatch(/\.studio-shell\s*\{[^}]*height:\s*100dvh/);
+    expect(base).toMatch(/\.panel\s*\{[^}]*min-height:\s*0/);
+  });
+
+  it("draws the round table with CSS only", () => {
+    expect(base).toMatch(/\.round-table\s*\{[^}]*border-radius:\s*50%/);
+    expect(base).toMatch(/\.round-seat\s*\{[^}]*position:\s*absolute/);
+  });
+
+  /**
+   * Regression for the 1440 overflow bug: `body { overflow: hidden }` alone
+   * does NOT stop a grid item from growing to its content height. A transcript
+   * of 1304px inside a 900px viewport pushed `body.scrollHeight` to 1412.
+   * Every scroll column therefore needs its own flex + min-height + overflow
+   * chain, and the shell needs a clipping backstop.
+   */
+  it("constrains every scroll column so a tall transcript cannot grow the page", () => {
+    expect(base).toMatch(/\.studio-shell\s*\{[^}]*overflow:\s*hidden/);
+
+    expect(base).toMatch(
+      /\.studio-log\s*\{[^}]*display:\s*flex[^}]*flex-direction:\s*column[^}]*min-height:\s*0[^}]*overflow:\s*hidden/,
+    );
+    expect(base).toMatch(
+      /\.studio-table,\s*\n?\s*\.studio-insights\s*\{[^}]*overflow:\s*hidden/,
+    );
+
+    // Every shell template must let the middle track shrink.
     for (const [name, block] of [
-      ["48rem", tablet],
+      ["base", base],
+      ["64rem", desktop],
       ["90rem", wide],
     ] as const) {
-      const named = new Set(templateRows(block).flat());
-      for (const area of named) {
-        if (area === "header") {
-          expect(base).toMatch(/\.studio-header\s*\{[^}]*grid-area:\s*header/);
-          continue;
-        }
-        if (area === "footer" || area === "tabbar") continue;
-        const owners = [...areas.entries()]
-          .filter(([selector]) => selector !== "studio-shell")
-          .filter(([, value]) => value === area)
-          .map(([selector]) => selector);
-        expect(owners, `area "${area}" in ${name} has no owning panel`).not.toHaveLength(
-          0,
-        );
+      const rows = /grid-template-rows:\s*([^;]+);/.exec(block);
+      expect(rows, `${name} must declare grid-template-rows`).not.toBeNull();
+      expect(rows?.[1], `${name} middle track must be minmax(0, 1fr)`).toMatch(
+        /minmax\(\s*0\s*,\s*1fr\s*\)/,
+      );
+    }
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * Palettes
+ * ------------------------------------------------------------------ */
+
+function luminance(hex: string): number {
+  const value = hex.replace("#", "").trim();
+  const full =
+    value.length === 3
+      ? value
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : value;
+  const channel = (v: number) => {
+    const c = v / 255;
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  const r = channel(parseInt(full.slice(0, 2), 16));
+  const g = channel(parseInt(full.slice(2, 4), 16));
+  const b = channel(parseInt(full.slice(4, 6), 16));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrast(a: string, b: string): number {
+  const la = luminance(a);
+  const lb = luminance(b);
+  const [hi, lo] = la > lb ? [la, lb] : [lb, la];
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+const palettes = {
+  atelier: declarations(blockOf(css, "@theme {")),
+  nocturne: declarations(blockOf(css, '[data-theme="nocturne"] {')),
+  paper: declarations(blockOf(css, '[data-theme="paper"] {')),
+};
+
+describe("three-palette tokens (docs/09 §2)", () => {
+  it("declares all three themes", () => {
+    expect(css).toContain('[data-theme="atelier"]');
+    expect(css).toContain('[data-theme="nocturne"]');
+    expect(css).toContain('[data-theme="paper"]');
+  });
+
+  it("defines the same token surface in every palette", () => {
+    const required = [
+      "--color-stage-1000",
+      "--color-stage-900",
+      "--color-ink-1",
+      "--color-ink-2",
+      "--color-ink-3",
+      "--color-live",
+      "--color-consensus",
+      "--color-divergence",
+      "--color-open",
+      "--color-wood",
+      "--color-seat",
+    ];
+
+    for (const [theme, tokens] of Object.entries(palettes)) {
+      for (const token of required) {
+        expect(tokens.get(token), `${theme} is missing ${token}`).toBeDefined();
       }
     }
   });
 
-  it("stacks the panels behind a tab bar on mobile instead of overlapping them", () => {
-    // Below 768 all three share the `stage` slot on purpose: the media query
-    // below hides every inactive tab, so exactly one panel is ever laid out.
-    const areaRule = /\.studio-rail\s*\{[^}]*grid-area:\s*([a-z-]+)/.exec(base);
-    expect(areaRule?.[1]).toBe("stage");
-
-    expect(mobile).toMatch(
-      /\.studio-rail\[data-tab-active="false"\][\s\S]*?\{\s*display:\s*none/,
-    );
-    expect(mobile).toMatch(
-      /\.studio-insights\[data-tab-active="false"\][\s\S]*?\{\s*display:\s*none/,
-    );
+  it("keeps body text above 4.5:1 in every palette", () => {
+    for (const [theme, tokens] of Object.entries(palettes)) {
+      const surface = tokens.get("--color-stage-1000") ?? "";
+      for (const ink of ["--color-ink-1", "--color-ink-2", "--color-ink-3"]) {
+        const ratio = contrast(tokens.get(ink) ?? "#000000", surface);
+        expect(ratio, `${theme} ${ink} contrast`).toBeGreaterThanOrEqual(4.5);
+      }
+    }
   });
 
-  it("keeps the insight drawer out of the grid below 1440", () => {
-    // Overlay drawer: fixed positioning means it cannot squeeze the transcript.
-    expect(tablet).toMatch(/\.studio-insights\s*\{[^}]*position:\s*fixed/);
-    expect(wide).toMatch(/\.studio-insights\s*\{[^}]*position:\s*static/);
-  });
-
-  it("keeps the page itself from scrolling", () => {
-    const baseLayer = blockOf(css, "@layer base {");
-    expect(baseLayer).toMatch(/body\s*\{[^}]*overflow:\s*hidden/);
-    expect(baseLayer).toMatch(/html,\s*body,\s*#root\s*\{[^}]*height:\s*100%/);
-    expect(baseLayer).toMatch(/\.scroll-y\s*\{[^}]*overflow-y:\s*auto/);
-    // Panels must be able to shrink, otherwise the inner scroller never gets
-    // a bounded height and the whole page scrolls instead.
-    expect(base).toMatch(/\.panel\s*\{[^}]*min-height:\s*0/);
+  it("keeps semantic colours readable on their own surface", () => {
+    for (const [theme, tokens] of Object.entries(palettes)) {
+      const surface = tokens.get("--color-stage-1000") ?? "";
+      for (const token of [
+        "--color-consensus",
+        "--color-divergence",
+        "--color-open",
+        "--color-live",
+      ]) {
+        const ratio = contrast(tokens.get(token) ?? "#000000", surface);
+        expect(ratio, `${theme} ${token} contrast`).toBeGreaterThanOrEqual(4.5);
+      }
+    }
   });
 });

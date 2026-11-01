@@ -1,6 +1,6 @@
 import { Quote } from "lucide-react";
 
-import type { Summary } from "../api/types";
+import type { DiscussionStatus, Summary } from "../api/types";
 import { formatRelative } from "../lib/time";
 
 /**
@@ -14,7 +14,8 @@ export function SummaryCard({
   anchorId = "summary-card",
 }: {
   summary: Summary | null;
-  status: "live" | "summarizing" | "ended" | "failed" | string;
+  /** Any session status; the card only renders for terminal states. */
+  status: DiscussionStatus;
   now?: number;
   anchorId?: string;
 }) {

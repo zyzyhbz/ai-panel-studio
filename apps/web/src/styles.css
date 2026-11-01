@@ -1,34 +1,52 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------ *
- * Design tokens (v1.0 — mirrored from docs/FRONTEND-PLAN.md §8)
- * Tailwind v4: `@theme` emits the custom properties AND generates
- * utilities such as `bg-stage-900` / `text-ink-2` / `border-line-1`.
+ * Design tokens — three themes, 60 / 30 / 10 proportions.
+ * See docs/09-深度讨论与圆桌UI改版.md §2.
+ *
+ * Tailwind v4 compiles utilities to `var(--color-*)`, so redefining the
+ * variables under `[data-theme]` re-colours the whole app without touching
+ * a single component. Default (no attribute / `atelier`) is the light,
+ * warm "atelier" palette.
  * ------------------------------------------------------------------ */
 @theme {
-  /* Stage surfaces — near-black, slightly blue, never pure #000 */
-  --color-stage-1000: #05070a;
-  --color-stage-950: #080b10;
-  --color-stage-900: #0b0f15;
-  --color-stage-850: #11161f;
-  --color-stage-800: #171e29;
+  /* 60% neutral — warm paper, ink, stone */
+  --color-stage-1000: #f2eee6;
+  --color-stage-950: #ece6da;
+  --color-stage-900: #fbf8f2;
+  --color-stage-850: #ffffff;
+  --color-stage-800: #eae3d6;
 
   /* Lines */
-  --color-line-1: rgba(255, 255, 255, 0.07);
-  --color-line-2: rgba(255, 255, 255, 0.14);
+  --color-line-1: rgba(28, 29, 31, 0.12);
+  --color-line-2: rgba(28, 29, 31, 0.24);
 
-  /* Ink */
-  --color-ink-1: #edf1f7;
-  --color-ink-2: #b7c0cd;
-  --color-ink-3: #7e8896;
-  --color-ink-4: #58616e;
+  /* Ink — all body sizes clear 4.5:1 on --color-stage-1000 */
+  --color-ink-1: #1c1d1f;
+  --color-ink-2: #3a3d42;
+  --color-ink-3: #5f6369;
+  --color-ink-4: #6b6f76;
 
-  /* Semantic (reserved hues — experts must avoid these) */
-  --color-live: #f0b429;
-  --color-consensus: #34d399;
-  --color-divergence: #e8735f;
-  --color-open: #a78bfa;
-  --color-danger: #ff5c5c;
+  /* 10% accent — cinnabar LIVE, blue-grey links */
+  --color-live: #b34a34;
+  --color-link: #3f6e8c;
+  --color-thinking: #a5762a;
+
+  /* Semantic — desaturated per §2 */
+  --color-consensus: #3f6b58;
+  --color-divergence: #a34a35;
+  --color-open: #6a5e8e;
+  --color-danger: #a63a2a;
+
+  /* 30% theme — walnut table, seat cards, slate panels */
+  --color-wood: #8b6b4a;
+  --color-wood-deep: #6f5338;
+  --color-seat: #fbf8f2;
+  --color-slate: #6e7f8d;
+
+  /* Text that sits on top of the accent / wood surfaces */
+  --color-on-accent: #ffffff;
+  --color-on-wood: #fdf9f2;
 
   /* Breakpoints: 2xl is redefined to 1440px for the 3-column stage */
   --breakpoint-2xl: 90rem;
@@ -42,6 +60,70 @@
     "Inter Tight", "Inter", -apple-system, "Segoe UI Variable", "Segoe UI",
     "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans SC",
     system-ui, sans-serif;
+}
+
+/* Theme A — Atelier (default). Declared explicitly so the switcher can set
+   `data-theme="atelier"` symmetrically with the other two. */
+[data-theme="atelier"] {
+  color-scheme: light;
+}
+
+/* Theme B — Nocturne: deep blue-grey stage, amber accent. */
+[data-theme="nocturne"] {
+  color-scheme: dark;
+  --color-stage-1000: #101418;
+  --color-stage-950: #151b21;
+  --color-stage-900: #1a2027;
+  --color-stage-850: #232b34;
+  --color-stage-800: #2b333d;
+  --color-line-1: rgba(255, 255, 255, 0.1);
+  --color-line-2: rgba(255, 255, 255, 0.2);
+  --color-ink-1: #f2f4f6;
+  --color-ink-2: #cbd2da;
+  --color-ink-3: #9aa4ae;
+  --color-ink-4: #8b96a1;
+  --color-live: #d97745;
+  --color-link: #8fb0c9;
+  --color-thinking: #d9a05b;
+  --color-consensus: #6fb08f;
+  --color-divergence: #d9705a;
+  --color-open: #a493c9;
+  --color-danger: #e06a5a;
+  --color-wood: #4a3b2e;
+  --color-wood-deep: #33291f;
+  --color-seat: #1f262e;
+  --color-slate: #5c7189;
+  --color-on-accent: #101418;
+  --color-on-wood: #f2f4f6;
+}
+
+/* Theme C — Paper & Ink: editorial paper, cobalt accent. */
+[data-theme="paper"] {
+  color-scheme: light;
+  --color-stage-1000: #f7f4ee;
+  --color-stage-950: #f0ebe2;
+  --color-stage-900: #fffdf9;
+  --color-stage-850: #ffffff;
+  --color-stage-800: #ece6db;
+  --color-line-1: rgba(23, 23, 23, 0.12);
+  --color-line-2: rgba(23, 23, 23, 0.24);
+  --color-ink-1: #171717;
+  --color-ink-2: #34363a;
+  --color-ink-3: #575b61;
+  --color-ink-4: #63676d;
+  --color-live: #2456a6;
+  --color-link: #2456a6;
+  --color-thinking: #8a6a2f;
+  --color-consensus: #3f6b58;
+  --color-divergence: #a34a35;
+  --color-open: #5b4f82;
+  --color-danger: #a63a2a;
+  --color-wood: #b08968;
+  --color-wood-deep: #8d6a4d;
+  --color-seat: #ffffff;
+  --color-slate: #8a9a8b;
+  --color-on-accent: #ffffff;
+  --color-on-wood: #fdfaf3;
 }
 
 @layer base {
@@ -102,19 +184,23 @@
 
 @layer components {
   /* ---------------------------------------------------------------- *
-   * Stage shell — the single source of truth for the 3-tier layout.
+   * Studio shell — header / [log · table · insights] / footer.
    * body never scrolls; each area owns its own scroll.
    * ---------------------------------------------------------------- */
   .studio-shell {
     height: 100dvh;
     min-height: 0;
     display: grid;
+    /* Final guard: even if a child misbehaves, the document never gains a
+       scrollbar. `.studio-log` alone was 1304px tall in a 900px viewport
+       before its flex/overflow constraint was added. */
+    overflow: hidden;
     background: var(--color-stage-1000);
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr) auto;
     grid-template-areas:
       "header"
-      "stage"
+      "table"
       "tabbar";
   }
 
@@ -123,22 +209,28 @@
     min-width: 0;
   }
 
-  .studio-rail {
-    grid-area: stage;
-    min-height: 0;
-    min-width: 0;
-  }
-
-  .studio-stage {
-    grid-area: stage;
-    min-height: 0;
-    min-width: 0;
-  }
-
+  /* Below 1024 every panel shares the `table` slot: the tab bar decides which
+     one is laid out, so exactly one is ever visible. */
+  .studio-log,
+  .studio-table,
   .studio-insights {
-    grid-area: stage;
+    grid-area: table;
     min-height: 0;
     min-width: 0;
+  }
+
+  /* The transcript is its own scroll column. Without flex/min-height the grid
+     item grows to content height and pushes the whole document. */
+  .studio-log {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .studio-table,
+  .studio-insights {
+    overflow: hidden;
   }
 
   .studio-footer {
@@ -151,53 +243,50 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
-  /* Mobile (<768): only the active tab panel is displayed. */
-  @media (max-width: 47.9375rem) {
-    .studio-rail[data-tab-active="false"],
-    .studio-stage[data-tab-active="false"],
+  @media (max-width: 63.9375rem) {
+    .studio-log[data-tab-active="false"],
+    .studio-table[data-tab-active="false"],
     .studio-insights[data-tab-active="false"] {
       display: none;
     }
 
-    /* The replay page has no tab bar on desktop; on mobile the transport bar
-       sits above the tab bar. */
-    .studio-shell[data-shell="replay"] {
-      grid-template-areas:
-        "header"
-        "stage"
-        "footer"
-        "tabbar";
-      grid-template-rows: auto minmax(0, 1fr) auto auto;
-    }
-
-    .studio-shell[data-shell="replay"] .studio-footer {
+    .studio-log,
+    .studio-table,
+    .studio-insights {
       display: flex;
     }
   }
 
-  @media (min-width: 48rem) {
+  @media (min-width: 40rem) {
     .studio-shell {
-      grid-template-columns: 92px minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      grid-template-areas:
+        "header"
+        "table"
+        "tabbar";
+    }
+  }
+
+  /* 1024–1439: transcript keeps a narrow column, insights become a drawer. */
+  @media (min-width: 64rem) {
+    .studio-shell {
+      grid-template-columns: clamp(300px, 26vw, 360px) minmax(0, 1fr);
       grid-template-rows: auto minmax(0, 1fr) auto;
       grid-template-areas:
         "header header"
-        "rail   stage"
+        "log    table"
         "footer footer";
     }
 
-    .studio-rail,
-    .studio-stage,
-    .studio-insights {
-      display: flex;
+    /* Each column must claim its own named area: the grouped `grid-area:
+       table` in the base layer would otherwise stack the transcript on top of
+       the round table for 1024–1439. */
+    .studio-log {
+      grid-area: log;
     }
 
-    .studio-rail {
-      grid-area: rail;
-      flex-direction: column;
-    }
-
-    .studio-stage {
-      grid-area: stage;
+    .studio-table {
+      grid-area: table;
     }
 
     .studio-tabbar {
@@ -208,8 +297,6 @@
       display: flex;
     }
 
-    /* Insights become an overlay drawer below 1440 — it must never
-       squeeze the transcript. */
     .studio-insights {
       position: fixed;
       top: 0;
@@ -229,21 +316,19 @@
     }
   }
 
-  @media (min-width: 64rem) {
-    .studio-shell {
-      grid-template-columns: 264px minmax(0, 1fr);
-    }
-  }
-
+  /* ≥1440: the three columns from docs/09 §3. */
   @media (min-width: 90rem) {
     .studio-shell {
       grid-template-columns:
-        clamp(300px, 21vw, 360px)
+        clamp(340px, 26vw, 420px)
         minmax(0, 1fr)
-        clamp(320px, 24vw, 400px);
+        clamp(320px, 23vw, 380px);
+      /* Restated on purpose: the middle track must be able to shrink to 0,
+         otherwise a tall transcript grows the row and the page scrolls. */
+      grid-template-rows: auto minmax(0, 1fr) auto;
       grid-template-areas:
         "header header  header"
-        "rail   stage   insights"
+        "log    table   insights"
         "footer footer  footer";
     }
 
@@ -258,6 +343,116 @@
     }
   }
 
+  /* ---------------------------------------------------------------- *
+   * Round table (docs/09 §3) — CSS ellipse, seats placed on the rim.
+   * ---------------------------------------------------------------- */
+  .round-stage {
+    position: relative;
+    min-height: 0;
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .round-arena {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    max-width: 860px;
+    max-height: 700px;
+  }
+
+  .round-table {
+    position: absolute;
+    left: 10%;
+    right: 10%;
+    top: 24%;
+    bottom: 21%;
+    border-radius: 50%;
+    background:
+      radial-gradient(
+        ellipse at 50% 26%,
+        color-mix(in oklab, var(--color-wood) 78%, white 22%),
+        var(--color-wood) 52%,
+        var(--color-wood-deep) 100%
+      );
+    border: 1px solid
+      color-mix(in oklab, var(--color-wood-deep) 65%, transparent);
+    box-shadow:
+      inset 0 3px 0 color-mix(in oklab, white 20%, transparent),
+      inset 0 -26px 44px -26px rgba(0, 0, 0, 0.55),
+      0 26px 48px -26px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Wooden rim — without it the ellipse reads as a rug, not a table. */
+  .round-table::before {
+    content: "";
+    position: absolute;
+    inset: -7px;
+    border-radius: 50%;
+    border: 7px solid
+      color-mix(in oklab, var(--color-wood-deep) 82%, black 8%);
+    opacity: 0.75;
+    box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.55);
+  }
+
+  .round-table::after {
+    content: "";
+    position: absolute;
+    inset: 8%;
+    border-radius: 50%;
+    border: 1px dashed color-mix(in oklab, var(--color-on-wood) 26%, transparent);
+    opacity: 0.7;
+  }
+
+  .round-spot {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(
+      circle at var(--spot-x, 50%) var(--spot-y, 50%),
+      color-mix(in oklab, var(--speaker, var(--color-live)) 30%, transparent),
+      transparent 58%
+    );
+    transition: background 520ms var(--ease-stage);
+  }
+
+  .round-center {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 48%;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  .round-seat {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    width: clamp(96px, 17%, 168px);
+    transition:
+      transform 320ms var(--ease-stage),
+      opacity 220ms var(--ease-out-soft);
+  }
+
+  .round-seat[data-active="true"] {
+    transform: translate(-50%, -50%) scale(1.06);
+    z-index: 2;
+  }
+
+  @media (max-width: 40rem) {
+    .round-seat {
+      width: 74px;
+    }
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Appearance / motion shared across the app
+   * ---------------------------------------------------------------- */
   /* Spotlight wash — only ONE large gradient in the whole app. */
   .stage-backdrop::before {
     content: "";

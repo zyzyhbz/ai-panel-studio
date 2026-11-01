@@ -77,15 +77,20 @@ function useInsightDiff(insights: Insight[]): Set<string> {
 function EvidenceChips({
   ids,
   onEvidenceClick,
+  onOpenTranscript,
 }: {
   ids: string[];
   onEvidenceClick?: (messageId: string) => void;
+  onOpenTranscript?: () => void;
 }) {
   if (ids.length === 0) return null;
   return (
     <button
       type="button"
-      onClick={() => onEvidenceClick?.(ids[0])}
+      onClick={() => {
+        onEvidenceClick?.(ids[0]);
+        onOpenTranscript?.();
+      }}
       className="mt-1 inline-flex items-center gap-1 rounded-sm border border-line-1 px-1.5 py-0.5 text-[10px] text-ink-4 transition-colors hover:border-line-2 hover:text-ink-2"
     >
       依据 {ids.length} 条
@@ -98,11 +103,13 @@ function InsightItem({
   tone,
   flashing,
   onEvidenceClick,
+  onOpenTranscript,
 }: {
   insight: Insight;
   tone: string;
   flashing: boolean;
   onEvidenceClick?: (messageId: string) => void;
+  onOpenTranscript?: () => void;
 }) {
   return (
     <li
@@ -117,7 +124,11 @@ function InsightItem({
         <span className={cn("text-[10px]", tone)}>
           {insight.firstSeenTurn ? `第 ${insight.firstSeenTurn} 轮起` : ""}
         </span>
-        <EvidenceChips ids={insight.evidenceMessageIds} onEvidenceClick={onEvidenceClick} />
+        <EvidenceChips
+          ids={insight.evidenceMessageIds}
+          onEvidenceClick={onEvidenceClick}
+          onOpenTranscript={onOpenTranscript}
+        />
       </div>
     </li>
   );
@@ -126,10 +137,13 @@ function InsightItem({
 export function InsightPanel({
   insights,
   onEvidenceClick,
+  onOpenTranscript,
   className,
 }: {
   insights: Insight[];
   onEvidenceClick?: (messageId: string) => void;
+  /** Called after an evidence jump so mobile can switch to the log tab. */
+  onOpenTranscript?: () => void;
   className?: string;
 }) {
   const groups = useMemo(() => groupInsights(insights), [insights]);

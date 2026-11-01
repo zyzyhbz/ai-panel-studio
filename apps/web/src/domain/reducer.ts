@@ -70,6 +70,7 @@ export function applyEvent(view: SessionView, event: PersistedEvent): SessionVie
         ...base,
         status: "summarizing",
         activeTurn: null,
+        turnStartedAt: null,
         summarizing: {
           reason: event.payload.reason === "auto" ? "auto" : "user",
           startedAt: event.payload.startedAt ?? event.createdAt,
@@ -88,6 +89,7 @@ export function applyEvent(view: SessionView, event: PersistedEvent): SessionVie
           turnFocus: p.turnFocus ?? "",
           references: p.references,
         },
+        turnStartedAt: event.createdAt,
       };
     }
 
@@ -102,6 +104,7 @@ export function applyEvent(view: SessionView, event: PersistedEvent): SessionVie
         ...base,
         messages: insertMessage(base.messages, message),
         activeTurn: sameTurn,
+        turnStartedAt: sameTurn ? base.turnStartedAt : null,
         turnCount: Math.max(base.turnCount, message.turnIndex),
       };
     }
@@ -117,6 +120,7 @@ export function applyEvent(view: SessionView, event: PersistedEvent): SessionVie
       return {
         ...base,
         activeTurn: clearActive,
+        turnStartedAt: clearActive ? base.turnStartedAt : null,
         notices: [
           ...base.notices,
           noticeOf(base, p, event.createdAt),
@@ -140,6 +144,7 @@ export function applyEvent(view: SessionView, event: PersistedEvent): SessionVie
         status: "ended",
         endedAt: event.payload.endedAt ?? event.createdAt,
         activeTurn: null,
+        turnStartedAt: null,
       };
 
     case "discussion.failed": {
@@ -148,6 +153,7 @@ export function applyEvent(view: SessionView, event: PersistedEvent): SessionVie
         ...base,
         status: "failed",
         activeTurn: null,
+        turnStartedAt: null,
         failure: {
           code: p.code ?? "INTERNAL",
           message: p.message ?? "这场讨论中断了。",
@@ -187,9 +193,19 @@ export function sessionReducer(
           action.status === "summarizing" || action.status === "ended"
             ? null
             : view.activeTurn,
+        turnStartedAt:
+          action.status === "summarizing" || action.status === "ended"
+            ? null
+            : view.turnStartedAt,
       };
     case "localFailure":
-      return { ...view, status: "failed", activeTurn: null, failure: action.failure };
+      return {
+        ...view,
+        status: "failed",
+        activeTurn: null,
+        turnStartedAt: null,
+        failure: action.failure,
+      };
     case "reset":
       return {
         ...emptySession(action.discussionId),

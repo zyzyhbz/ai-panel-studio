@@ -1,35 +1,51 @@
-﻿import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useReducedMotion } from "../../lib/useReducedMotion";
 import { Layers, MessageSquare, Users } from "lucide-react";
 
-import { ExpertRail } from "../../components/ExpertRail";
+import { ExpertList } from "../../components/ExpertList";
 import { InsightPanel } from "../../components/InsightPanel";
 import { LiveBar } from "../../components/PlaybackBar";
+import { RoundTable } from "../../components/RoundTable";
 import { StageHeader } from "../../components/StageHeader";
 import { SummaryCard } from "../../components/SummaryCard";
 import { Transcript } from "../../components/Transcript";
 import { Button } from "../../components/ui/Button";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
+import {
+  convergenceOf,
+  deriveAllStatuses,
+  progressOf,
+} from "../../domain/selectors";
 import { useNow, useStickyScroll } from "../../lib/useStickyScroll";
+import { useReducedMotion } from "../../lib/useReducedMotion";
+import { useStreamingFlags } from "../../lib/useStreamSnapshot";
 import { useViewport } from "../../lib/useViewport";
 import { useUiStore, type MobileTab } from "../../stores/uiStore";
 import { useSession } from "./SessionProvider";
 
 const TABS: Array<{ key: MobileTab; label: string; icon: typeof Users }> = [
-  { key: "discussion", label: "讨论", icon: MessageSquare },
-  { key: "experts", label: "专家", icon: Users },
+  { key: "table", label: "圆桌", icon: Users },
+  { key: "log", label: "实录", icon: MessageSquare },
   { key: "insights", label: "共识", icon: Layers },
 ];
 
-export function StageView({ onReplay }: { onReplay: (() => void) | null }) {
+export function StageView({
+  onReplay,
+  onBack,
+}: {
+  onReplay: (() => void) | null;
+  onBack: () => void;
+}) {
   const { view, buffer, connection, requestEnd } = useSession();
   const navigate = useNavigate();
   const viewport = useViewport();
-  const reducedMotion = useReducedMotion() ?? false;
+  const reducedMotion = useReducedMotion();
 
   const sticky = useStickyScroll(reducedMotion);
-  const now = useNow(view.status === "live" || view.status === "summarizing");
+  const live = view.status === "live" || view.status === "summarizing";
+  const now = useNow(live);
+
+  const { messageId: streamingMessageId, hasText } = useStreamingFlags(buffer);
 
   const mobileTab = useUiStore((state) => state.mobileTab);
   const setMobileTab = useUiStore((state) => state.setMobileTab);
@@ -37,33 +53,48 @@ export function StageView({ onReplay }: { onReplay: (() => void) | null }) {
   const toggleDrawer = useUiStore((state) => state.toggleInsightDrawer);
   const setDrawerOpen = useUiStore((state) => state.setInsightDrawerOpen);
 
+  const [expertsOpen, setExpertsOpen] = useState(false);
   const [highlightMessageId, setHighlightMessageId] = useState<string | null>(null);
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [ending, setEnding] = useState(false);
 
+  // Below 1024 the three panels become tabs; from 1024 they are grid columns.
+  const tabbed = viewport === "mobile" || viewport === "tablet";
   const isWide = viewport === "wide";
-  const isMobile = viewport === "mobile";
+
+  const statuses = useMemo(
+    () => deriveAllStatuses(view, streamingMessageId, hasText, now),
+    [view, streamingMessageId, hasText, now],
+  );
+  const convergence = useMemo(() => convergenceOf(view), [view]);
+  const progress = useMemo(() => progressOf(view), [view]);
 
   useEffect(() => {
     if (!highlightMessageId) return;
     const timer = window.setTimeout(() => setHighlightMessageId(null), 2400);
-    const node = document.querySelector(
-      `[data-testid="message-${highlightMessageId}"]`,
-    );
-    node?.scrollIntoView({ block: "center", behavior: reducedMotion ? "auto" : "smooth" });
+    if (tabbed) setMobileTab("log");
+    document
+      .querySelector(`[data-testid="message-${highlightMessageId}"]`)
+      ?.scrollIntoView({
+        block: "center",
+        behavior: reducedMotion ? "auto" : "smooth",
+      });
     return () => window.clearTimeout(timer);
-  }, [highlightMessageId, reducedMotion]);
+  }, [highlightMessageId, reducedMotion, tabbed, setMobileTab]);
 
   useEffect(() => {
     if (isWide) setDrawerOpen(false);
   }, [isWide, setDrawerOpen]);
 
   const jumpToSummary = useCallback(() => {
+    if (tabbed) setMobileTab("log");
     document.getElementById("summary-card")?.scrollIntoView({
       block: "start",
       behavior: reducedMotion ? "auto" : "smooth",
     });
-  }, [reducedMotion]);
+  }, [reducedMotion, tabbed, setMobileTab]);
+
+  const openTranscript = useCallback(() => setMobileTab("log"), [setMobileTab]);
 
   const doEnd = async () => {
     setConfirmEnd(false);
@@ -79,6 +110,18 @@ export function StageView({ onReplay }: { onReplay: (() => void) | null }) {
 
   const ended = view.status === "ended" || view.status === "failed";
 
+  const liveBar = (
+    <LiveBar
+      inline={tabbed}
+      turnCount={view.turnCount}
+      status={view.status}
+      insightCount={view.insights.length}
+      sticky={sticky}
+      visible
+      onReplay={ended && onReplay ? onReplay : undefined}
+    />
+  );
+
   return (
     <>
       <div className="studio-shell" data-shell="live">
@@ -86,6 +129,9 @@ export function StageView({ onReplay }: { onReplay: (() => void) | null }) {
           view={view}
           connection={connection.state}
           insightCount={view.insights.length}
+          expertCount={view.roster.length}
+          onBack={onBack}
+          onToggleExperts={() => setExpertsOpen((open) => !open)}
           onToggleInsights={isWide ? undefined : () => toggleDrawer()}
           onEnd={() => setConfirmEnd(true)}
           ending={ending}
@@ -94,19 +140,8 @@ export function StageView({ onReplay }: { onReplay: (() => void) | null }) {
         />
 
         <aside
-          className="studio-rail"
-          data-tab-active={isMobile ? mobileTab === "experts" : undefined}
-        >
-          <ExpertRail
-            view={view}
-            buffer={buffer}
-            density={viewport === "tablet" ? "compact" : "full"}
-          />
-        </aside>
-
-        <div
-          className="studio-stage flex min-h-0 flex-col"
-          data-tab-active={isMobile ? mobileTab === "discussion" : undefined}
+          className="studio-log"
+          data-tab-active={tabbed ? mobileTab === "log" : undefined}
         >
           <Transcript
             view={view}
@@ -116,34 +151,40 @@ export function StageView({ onReplay }: { onReplay: (() => void) | null }) {
             onSummaryJump={jumpToSummary}
             className="flex-1"
             footer={
-              <SummaryCard
-                summary={view.summary}
-                status={view.status}
-                now={now}
-              />
+              <SummaryCard summary={view.summary} status={view.status} now={now} />
             }
           />
+          {tabbed && <div className="shrink-0">{liveBar}</div>}
+        </aside>
 
-          {isMobile && (
-            <LiveBar
-              inline
-              turnCount={view.turnCount}
-              insightCount={view.insights.length}
-              sticky={sticky}
-              visible
-              onReplay={ended && onReplay ? onReplay : undefined}
-            />
-          )}
+        <div
+          className="studio-table flex min-h-0 flex-col"
+          data-tab-active={tabbed ? mobileTab === "table" : undefined}
+        >
+          <RoundTable
+            view={view}
+            statuses={statuses}
+            convergence={convergence}
+            progress={progress}
+            now={now}
+          />
+          <ExpertList
+            view={view}
+            statuses={statuses}
+            open={expertsOpen}
+            onToggle={() => setExpertsOpen((open) => !open)}
+          />
         </div>
 
         <aside
           className="studio-insights"
           data-open={drawerOpen}
-          data-tab-active={isMobile ? mobileTab === "insights" : undefined}
+          data-tab-active={tabbed ? mobileTab === "insights" : undefined}
         >
           <InsightPanel
             insights={view.insights}
             onEvidenceClick={setHighlightMessageId}
+            onOpenTranscript={openTranscript}
             className="h-full"
           />
         </aside>
@@ -157,18 +198,14 @@ export function StageView({ onReplay }: { onReplay: (() => void) | null }) {
           />
         )}
 
-        {!isMobile && (
-          <LiveBar
-            turnCount={view.turnCount}
-            insightCount={view.insights.length}
-            sticky={sticky}
-            visible
-            onReplay={ended && onReplay ? onReplay : undefined}
-          />
-        )}
+        {!tabbed && liveBar}
 
-        {isMobile && (
-          <nav role="tablist" aria-label="演播厅视图" className="studio-tabbar flex h-14 items-stretch border-t border-line-1 bg-stage-950/95">
+        {tabbed && (
+          <nav
+            role="tablist"
+            aria-label="演播厅视图"
+            className="studio-tabbar flex h-14 items-stretch border-t border-line-1 bg-stage-950/95"
+          >
             {TABS.map((tab) => {
               const Icon = tab.icon;
               const selected = mobileTab === tab.key;
@@ -196,7 +233,7 @@ export function StageView({ onReplay }: { onReplay: (() => void) | null }) {
           <div className="pointer-events-auto flex items-center gap-3 rounded-lg border border-danger/40 bg-stage-850/95 px-4 py-2 text-[12px] text-danger shadow-xl backdrop-blur">
             <span>{view.failure?.message ?? "这场讨论中断了。"}</span>
             <Button size="sm" variant="ghost" onClick={() => navigate("/")}>
-              返回首页
+              返回大厅
             </Button>
           </div>
         </div>

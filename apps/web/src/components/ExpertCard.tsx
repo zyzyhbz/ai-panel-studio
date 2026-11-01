@@ -1,5 +1,5 @@
 import type { Expert, Polarity } from "../api/types";
-import type { ExpertStatus } from "../domain/selectors";
+import { EXPERT_STATUS_LABEL, type ExpertStatus } from "../domain/selectors";
 import { cn } from "../lib/cn";
 import { readableInk, safeColor, tint } from "../lib/color";
 
@@ -54,14 +54,16 @@ export function PolarityScale({
   );
 }
 
-const STATUS_LABEL: Record<ExpertStatus, string> = {
-  idle: "待机",
-  preparing: "准备发言",
-  speaking: "发言中",
+const STATUS_TONE: Record<ExpertStatus, string> = {
+  idle: "text-ink-4",
+  thinking: "text-thinking",
+  preparing: "text-thinking",
+  speaking: "text-live",
+  finished: "text-ink-4 opacity-70",
 };
 
 export function StatusDot({ status }: { status: ExpertStatus }) {
-  if (status === "preparing") {
+  if (status === "preparing" || status === "thinking") {
     return (
       <span
         aria-hidden
@@ -217,16 +219,21 @@ export function ExpertCard({
         <p className="line-clamp-2 text-[11px] leading-4 text-ink-3">
           {expert.stance}
         </p>
-        <p className="truncate text-[10px] text-ink-4">
-          {turnFocus && active ? (
-            <span style={{ color }}>{turnFocus}</span>
-          ) : (
-            <>关注：{expert.focusArea}</>
-          )}
-        </p>
       </div>
 
-      <p className="sr-only">{STATUS_LABEL[status]}</p>
+      <div className="mt-2 flex items-center gap-1.5 pl-1">
+        <StatusDot status={status} />
+        <span className={cn("text-[10px] font-medium", STATUS_TONE[status])} data-testid="expert-card-status">
+          {EXPERT_STATUS_LABEL[status]}
+        </span>
+        <span className="truncate text-[10px] text-ink-4">
+          {turnFocus && active ? (
+            <span style={{ color }}>· {turnFocus}</span>
+          ) : (
+            <>· {expert.focusArea}</>
+          )}
+        </span>
+      </div>
     </div>
   );
 }
