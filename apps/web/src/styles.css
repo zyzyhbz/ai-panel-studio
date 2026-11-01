@@ -414,21 +414,60 @@
     background: var(--color-seat);
     backdrop-filter: blur(12px);
     box-shadow: 0 12px 28px -20px rgba(30, 24, 18, 0.4);
-    transition: opacity 700ms linear;
     pointer-events: none;
   }
 
-  .round-bubble::after {
-    content: "";
+  .round-bubble[data-phase="fading"] {
+    animation: bubble-fade 2s linear forwards;
+  }
+
+  @keyframes bubble-fade {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  .round-bubble-tail {
     position: absolute;
-    left: 50%;
-    bottom: -6px;
     width: 10px;
     height: 10px;
-    transform: translateX(-50%) rotate(45deg);
-    border-right: 1px solid var(--color-line-1);
-    border-bottom: 1px solid var(--color-line-1);
     background: var(--color-seat);
+    border: 0 solid var(--bubble-border, var(--color-line-1));
+  }
+
+  .round-bubble-tail[data-side="bottom"] {
+    bottom: -5px;
+    left: var(--tail-offset, 50%);
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+    transform: translateX(-50%) rotate(45deg);
+  }
+
+  .round-bubble-tail[data-side="top"] {
+    top: -5px;
+    left: var(--tail-offset, 50%);
+    border-top-width: 1px;
+    border-left-width: 1px;
+    transform: translateX(-50%) rotate(45deg);
+  }
+
+  .round-bubble-tail[data-side="left"] {
+    left: -5px;
+    top: var(--tail-offset, 50%);
+    border-left-width: 1px;
+    border-bottom-width: 1px;
+    transform: translateY(-50%) rotate(45deg);
+  }
+
+  .round-bubble-tail[data-side="right"] {
+    right: -5px;
+    top: var(--tail-offset, 50%);
+    border-top-width: 1px;
+    border-right-width: 1px;
+    transform: translateY(-50%) rotate(45deg);
   }
 
   .round-bubble-head {

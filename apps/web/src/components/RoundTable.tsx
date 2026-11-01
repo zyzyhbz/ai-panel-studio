@@ -157,6 +157,12 @@ export function RoundTable({
   const experts = expertsOf(view.roster);
   const active = view.activeTurn;
 
+  const seatPoints = new Map<string, Point>();
+  if (host) seatPoints.set(host.id, seatPoint(0, experts.length, true));
+  experts.forEach((expert, index) => {
+    seatPoints.set(expert.id, seatPoint(index, experts.length, false));
+  });
+
   const statusOf = (id: string): ExpertStatus => statuses.get(id) ?? "idle";
 
   const focusOf = (id: string): string | null => {
@@ -192,7 +198,7 @@ export function RoundTable({
           }
         />
 
-        <SpeechBubble view={view} buffer={buffer} now={now ?? Date.now()} />
+        <SpeechBubble view={view} buffer={buffer} seatPoints={seatPoints} now={now ?? Date.now()} />
 
         {activePoint && (
           <div
