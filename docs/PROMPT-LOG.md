@@ -2,9 +2,29 @@
 
 - 日期：2026-11-01
 - 状态：交付版（7 段，覆盖 SDD / DDD / TDD / E2E + Agent 行为 + 需求拆解 + 迭代）
-- 关联：[WORKFLOW](WORKFLOW.md)、[PRD](PRD.md)、[Agent API](AGENT-API.md)、[runtime prompts](prompts/runtime/README.md)
+- 关联：[WORKFLOW](WORKFLOW.md)、[多 Agent 与阶段映射](08-多Agent协作与阶段映射.md)、[PRD](PRD.md)、[Agent API](AGENT-API.md)、[runtime prompts](prompts/runtime/README.md)
 
 > 记录原则：保留真正发给 AI 的 Prompt 原文/关键节选，不只写事后总结。完整开发过程记录在 `docs/prompts/devlog/`；运行时 prompt 全文在 `docs/prompts/runtime/`。
+
+## 0. 作者与阶段映射（先看这一节）
+
+本项目采用**多 Agent 角色分工**，不是 PM 一个人按 SDD→DDD→TDD→E2E 顺序手写所有 Prompt。为了避免文档“看起来像全是我写的”，先说明作者：
+
+| 类型 | 作者 | 例子 | 本文位置 |
+| --- | --- | --- | --- |
+| PM→Agent 的任务 / 评审 / 验收 Prompt | 李荟源（PM） | G1 只做设计、BUG-01 空壳、布局 boundingBox、用户反馈改版 | §1–§7 |
+| Agent 运行时 / 实现 Prompt | AI/前端/后端/测试 Agent，PM 审核 | P-SPEECH v2、P-DECIDE v2、debateMap、组件测试、E2E | `docs/prompts/runtime/`、`devlog/` |
+
+阶段与角色的关系是**工程检查点**，不是行政分班：
+
+| 阶段 | 谁主要负责 | PM 实际做什么 |
+| --- | --- | --- |
+| SDD | 后端/前端/测试评审契约 | 下发评审任务、裁决并冻结 v1.0 |
+| DDD | AI/后端/前端定义领域边界 | 定不变量（事件溯源、限界上下文、直播/回放同源） |
+| TDD | 各实现 Agent 写测试 | 提供失败现象/验收标准，审查回归是否真正能抓住 bug |
+| E2E | 测试 Agent | 定义用户旅程与门禁，不替测试改实现 |
+
+详见 [多 Agent 协作与阶段映射](08-多Agent协作与阶段映射.md)。
 
 ---
 
@@ -67,9 +87,18 @@ PM 初稿把“同步生成阵容”“SSE 补发”“seq 分配”写得太理
 
 ---
 
-## 3. 【DDD 阶段】前端组件、页面与状态流转
+## 3. 【DDD 阶段】领域模型、限界上下文与呈现层
 
-**原始 Prompt（节选）**
+DDD 不等于“前端画页面”。本项目先定领域语言与边界：
+
+- 聚合/对象：`Discussion`、`Roster`、`Turn`、`Message`、`Insight`、`Event`；
+- 限界上下文：Agent 行为、服务端运行时、Web 呈现；
+- 防腐层：`LLMClient`、repository、API/SSE 契约；
+- 领域不变量：事件溯源、`seq` 连续、跨会话隔离、直播/回放共用 reducer、`debateMap` 为确定性投影。
+
+下面的 Prompt 是**呈现层限界上下文**的设计任务；完整领域模型证据在 `ER.md`、`06-G1契约决议`、`AGENT-BEHAVIOR.md`、`debate-map.ts`。
+
+**原始 Prompt（PM→前端，节选）**
 
 ```text
 你是 AI Panel Studio 项目的前端工程师。
@@ -149,11 +178,13 @@ G1 任务：只做设计，不写页面代码。
 
 不是“实现完再补测试”，而是用失败用例锁定行为：JSON 合法率、发言长度、洞察 id 全局唯一、结束宽限、断线补发。
 
+> 作者说明：核心不变量和 Bug 回归由 PM 给出现象/验收，后端/前端/测试 Agent 编写具体测试；PM 审查“这条测试是否真能抓住 bug”，不冒充每行测试都是 PM 手写。
+
 **挑战与修正**
 
 最初测试每个用例用全新临时 DB，第一个会话永远不撞洞察主键，所以漏掉了 `UNIQUE constraint failed: insights.id`；真实 smoke 才暴露。修复为 `i_ + sha256(discussionId:type:contentHash)` 派生 id，并新增跨讨论回归。另一个坑是 `empty` mock 仍返回合法 JSON、`long` 文本只有 83 字，测试没真正触发目标路径；修 fixture 后才有意义。
 
-**产出**：agent 86 tests、server 19 tests、web 36 tests、`docs/prompts/devlog/01-g2-agent-package.md`
+**产出**：agent 92 tests、server 28 tests、web 42 tests、`docs/prompts/devlog/01-g2-agent-package.md`
 
 ---
 
@@ -177,11 +208,13 @@ G1 任务：只做设计，不写页面代码。
 
 用真实浏览器证明“用户能从头走到尾”，而不是只看单测。
 
+> 作者说明：E2E 代码由测试 Agent 独立编写，PM 只定义用户旅程、门禁与失败验收；测试目录不归 PM 改，避免“自己写测试自己过”。
+
 **挑战与修正**
 
 `MOCK_DELAY_MS=0` 时 12 轮 16ms 就结束，SSE 连上时已是终态，前端只 `localStatus=live` 没回读投影，出现空壳；修复为 confirm 后 `await refresh()` + `stream.ready` 状态不一致时 refresh。Playwright trace 写到中文路径 `ENOENT`，改到 `%TEMP%\ai-panel-e2e`。布局回归最初只断言“存在/可见”，抓不到三栏重叠；改成矩形相交 + 铺满视口 + 首条消息落在 stage 区间，才真正抓住 bug。
 
-**产出**：`e2e/**` 20 条用例、`docs/QA-G2-REPORT.md`、`REAL-SMOKE.md`
+**产出**：`e2e/**` 35 条用例、`docs/QA-REPORT.md`、`REAL-SMOKE.md`
 
 ---
 
@@ -222,8 +255,8 @@ G1 任务：只做设计，不写页面代码。
 
 | 题目要求 | 本文件对应 |
 | --- | --- |
-| 记录最核心原始 Prompt | §1–§6 均保留原文/节选 |
-| 明确标注 SDD/DDD/TDD/E2E | §2/§3/§5/§6 |
+| 记录最核心原始 Prompt | §1–§7 均保留原文/节选 |
+| 明确标注 SDD/DDD/TDD/E2E | §2/§3/§5/§6，多 Agent 映射见 `08-多Agent协作与阶段映射.md` |
 | 每段 1–2 句说明 | 每节“意图/挑战与修正” |
 | ≥5 段 | 7 段 |
 | 运行时 prompt 全文 | `docs/prompts/runtime/` |

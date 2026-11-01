@@ -201,6 +201,7 @@ E2E 用本机 Chrome（`channel: "chrome"`），不下载 Playwright 浏览器�
 - [G1 契约决议 v1.0](docs/06-G1契约决议.md)
 - [Agent API](docs/AGENT-API.md)
 - [工作流说明](docs/WORKFLOW.md)
+- [多 Agent 协作与阶段映射](docs/08-多Agent协作与阶段映射.md)
 - [Prompt 记录](docs/PROMPT-LOG.md) / [runtime prompts](docs/prompts/runtime/README.md)
 - [真实 smoke](docs/REAL-SMOKE.md)
 - [5 会话/20 SSE 压力报告](docs/PERF-REPORT.md)
