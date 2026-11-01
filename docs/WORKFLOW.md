@@ -9,7 +9,7 @@
 
 题目问的是“Claude Code + DeepSeek V4 Pro”。我实际使用的是 **DeepSeek Harness + deepseek-flash**，没有使用 Claude Code；这是本机环境和模型接入决定的。方法可以等价迁移：把每个角色的任务包交给 Claude Code，契约、目录边界、测试门禁不变。
 
-我采用多 Agent 分工，由我统一调度：
+我采用多 Agent 分工，由我统一调度。最初我要求主 Agent 以产品经理身份工作，前端、后端、测试各开一个智能体；在 A 确认后，我发现 prompt 设计和上下文工程如果分散在前端/后端，会出现多套不一致的 Agent 理解，于是补设了独立的 AI/Agent 角色。
 
 | 角色 | 我派它做什么 |
 | --- | --- |
