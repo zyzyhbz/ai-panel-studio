@@ -39,9 +39,9 @@ export const env = {
   /**
    * 产物目录必须是**纯 ASCII 绝对路径**。
    *
-   * 踩过的坑：仓库路径含中文（`D:\AI开发\...`），Playwright 把 trace 写到
+   * 踩过的坑：仓库路径含中文（`<repo-root>\...`），Playwright 把 trace 写到
    * `e2e/.artifacts/...` 后，在 browserContext.close 阶段按 cp936 拼路径导致
-   * `ENOENT: D:\AI寮€鍙慭...`，整套用例因此失败——不是断言失败，是路径编码失败。
+   * `ENOENT: <repo-root>\...`，整套用例因此失败——不是断言失败，是路径编码失败。
    *
    * 默认放到系统临时目录（纯 ASCII）：%TEMP%\ai-panel-e2e。
    * 可用 E2E_ARTIFACTS_DIR 覆盖，但请保持 ASCII。

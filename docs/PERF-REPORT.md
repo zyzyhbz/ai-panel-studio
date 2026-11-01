@@ -58,7 +58,7 @@ duration=9,078ms
 ## 5. 复现
 
 ```powershell
-cd D:\AI开发\ai-panel-studio
+cd <repo-root>
 # 先确保 mock server 在 3001
 .\scripts\pnpm.ps1 --filter @ai-panel/server dev
 

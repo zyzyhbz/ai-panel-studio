@@ -10,10 +10,10 @@
 
 ---
 
-## 1. 原始 Prompt（PM 派单）
+## 1. 原始 Prompt（我下发）
 
 ```text
-恢复 G2，继续 AI-02/03。昨晚 WIP 已提交在 54c6397，docs/PAUSE-STATE.md 有状态。
+恢复 G2，继续 AI-02/03。昨晚 WIP 已提交在 54c6397。
 先读 docs/06-G1契约决议.md。
 
 packages/agent/src 已有 prompts/schema/policy/context/llm 等 WIP，但需要收口成可被后端直接调用的包。优先：

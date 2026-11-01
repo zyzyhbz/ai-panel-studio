@@ -66,10 +66,10 @@ RESULT:
 ## 复现
 
 ```powershell
-cd D:\AI开发\ai-panel-studio
+cd <repo-root>
 $env:LLM_MODE="real"
 $env:PORT="3002"
-$env:DATABASE_PATH="D:\AI开发\ai-panel-studio\data\real-final.db"
+$env:DATABASE_PATH="data/real-smoke.db"
 .\scripts\pnpm.ps1 --filter @ai-panel/server dev
 # 另一个终端：POST /api/discussions → confirm → 轮询 detail
 ```

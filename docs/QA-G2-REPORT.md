@@ -117,7 +117,7 @@ fixtures 校验：37 个文件
 
 ### 观察 1：测试环境路径编码（已修）
 
-项目路径含中文（`D:\AI开发\...`）时，Playwright 把 trace 写到仓库内 `.artifacts` 会在 `browserContext.close` 阶段按 cp936 拼路径，报 `ENOENT: D:\AI寮€鍙慭...`——表现为"用例失败但不是断言失败"。
+项目路径含中文（`<repo-root>\...`）时，Playwright 把 trace 写到仓库内 `.artifacts` 会在 `browserContext.close` 阶段按 cp936 拼路径，报 `ENOENT: <repo-root>\...`——表现为"用例失败但不是断言失败"。
 **修复**：产物目录改为纯 ASCII 绝对路径 `%TEMP%\ai-panel-e2e`（可用 `E2E_ARTIFACTS_DIR` 覆盖），trace/screenshot/report 全部落在那里。
 
 ### 观察 2：联调期后端进程重启导致偶发 `ECONNREFUSED`

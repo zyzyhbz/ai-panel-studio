@@ -55,4 +55,4 @@
 - `pnpm build` + `pnpm start` 冒烟一次。
 - 生成 zip（排除 `node_modules/.git/data/.env.local`）。
 - 创建 GitHub/Gitee 私有仓库并邀请指定账号。
-- 按 PRD §12.4 发邮件到 `xulei@wisquest.com`。
+- 按 PRD §12.4 发邮件到 `<招聘邮箱>`。

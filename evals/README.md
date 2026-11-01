@@ -7,7 +7,7 @@
 ## 跑法
 
 ```powershell
-cd D:\AI开发\ai-panel-studio
+cd <repo-root>
 .\scripts\pnpm.ps1 exec tsx evals/run.ts                    # 行为基线
 .\scripts\pnpm.ps1 exec tsx evals/check-prompt-versions.ts  # Prompt 版本一致性（交付前必须绿）
 # 报告：evals/report/baseline.mock.md / baseline.mock.json

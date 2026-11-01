@@ -74,7 +74,7 @@ data/            本地 SQLite（gitignored）
 本机 `node` 默认是 v20、`pnpm` 是 DSH 的 Electron shim，直接跑会 ABI 不匹配。统一用包装脚本：
 
 ```powershell
-cd D:\AI开发\ai-panel-studio
+cd <repo-root>
 .\scripts\pnpm.ps1 install
 .\scripts\pnpm.ps1 db:reset
 .\scripts\pnpm.ps1 db:seed
