@@ -1,5 +1,4 @@
 import { useEffect, useMemo, type ReactNode } from "react";
-import { motion } from "motion/react";
 import { ArrowDown } from "lucide-react";
 
 import type { Intent, Message } from "../api/types";
@@ -47,13 +46,10 @@ export function MessageBubble({
   const color = safeColor(message.speakerColor);
 
   return (
-    <motion.article
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+    <article
       data-testid={`message-${message.id}`}
       className={cn(
-        "relative py-2 pl-3",
+        "msg-enter relative py-2 pl-3",
         highlighted && "insight-flash rounded-sm",
       )}
     >
@@ -79,7 +75,7 @@ export function MessageBubble({
       <p className="mt-1 text-[15px] leading-[25px] break-words text-ink-2">
         {message.content}
       </p>
-    </motion.article>
+    </article>
   );
 }
 
@@ -213,6 +209,7 @@ export function Transcript({
   sticky,
   highlightMessageId,
   onSummaryJump,
+  footer,
   className,
 }: {
   view: SessionView;
@@ -220,6 +217,7 @@ export function Transcript({
   sticky: StickyScroll;
   highlightMessageId?: string | null;
   onSummaryJump?: () => void;
+  footer?: ReactNode;
   className?: string;
 }) {
   const count = view.messages.length;
@@ -309,6 +307,7 @@ export function Transcript({
           <div className="mx-auto max-w-[860px]">
             {body}
             {streamingId && <StreamingBubble view={view} buffer={buffer} />}
+            {footer}
           </div>
 
           <div className="mx-auto max-w-[860px]">

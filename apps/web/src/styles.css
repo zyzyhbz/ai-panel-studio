@@ -152,10 +152,27 @@
   }
 
   /* Mobile (<768): only the active tab panel is displayed. */
-  .studio-rail[data-tab-active="false"],
-  .studio-stage[data-tab-active="false"],
-  .studio-insights[data-tab-active="false"] {
-    display: none;
+  @media (max-width: 47.9375rem) {
+    .studio-rail[data-tab-active="false"],
+    .studio-stage[data-tab-active="false"],
+    .studio-insights[data-tab-active="false"] {
+      display: none;
+    }
+
+    /* The replay page has no tab bar on desktop; on mobile the transport bar
+       sits above the tab bar. */
+    .studio-shell[data-shell="replay"] {
+      grid-template-areas:
+        "header"
+        "stage"
+        "footer"
+        "tabbar";
+      grid-template-rows: auto minmax(0, 1fr) auto auto;
+    }
+
+    .studio-shell[data-shell="replay"] .studio-footer {
+      display: flex;
+    }
   }
 
   @media (min-width: 48rem) {
@@ -175,7 +192,12 @@
     }
 
     .studio-rail {
+      grid-area: rail;
       flex-direction: column;
+    }
+
+    .studio-stage {
+      grid-area: stage;
     }
 
     .studio-tabbar {
@@ -226,6 +248,7 @@
     }
 
     .studio-insights {
+      grid-area: insights;
       position: static;
       width: auto;
       z-index: auto;
@@ -363,6 +386,40 @@
       #000 calc(100% - 14px),
       transparent 100%
     );
+  }
+
+  /* Drawer scrim below 1440 — the insight panel overlays the transcript
+     instead of squeezing it. */
+  .studio-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 39;
+    background: rgba(5, 7, 10, 0.62);
+    backdrop-filter: blur(2px);
+  }
+
+  @media (min-width: 90rem) {
+    .studio-scrim {
+      display: none;
+    }
+  }
+
+  /* Mobile tab bar button */
+  .studio-tab {
+    display: flex;
+    flex: 1 1 0;
+    min-width: 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    font-size: 10px;
+    color: var(--color-ink-4);
+    transition: color 140ms var(--ease-out-soft);
+  }
+
+  .studio-tab[aria-selected="true"] {
+    color: var(--color-live);
   }
 }
 

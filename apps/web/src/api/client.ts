@@ -73,7 +73,7 @@ function isErrorBody(value: unknown): value is ApiErrorBody {
 }
 
 export interface RequestOptions {
-  method?: "GET" | "POST" | "DELETE";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
   signal?: AbortSignal;
   headers?: Record<string, string>;
@@ -86,6 +86,14 @@ export async function request<T>(
   const { method = "GET", body, signal, headers } = options;
   let response: Response;
 
+  // Fastify's JSON body parser rejects a `Content-Type: application/json`
+  // request with an empty body (400 VALIDATION_ERROR), and the bodyless
+  // command endpoints (`confirm` / `end` / `regenerate`) do not accept a
+  // missing content type either. Send `{}` explicitly for every mutation.
+  const mutating = method === "POST" || method === "PUT" || method === "PATCH";
+  const hasBody = body !== undefined;
+  const payloadBody = hasBody ? JSON.stringify(body) : mutating ? "{}" : undefined;
+
   try {
     response = await fetch(`${BASE}${path}`, {
       method,
@@ -94,10 +102,10 @@ export async function request<T>(
       credentials: "same-origin",
       headers: {
         Accept: "application/json",
-        ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+        ...(hasBody || mutating ? { "Content-Type": "application/json" } : {}),
         ...headers,
       },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: payloadBody,
     });
   } catch (cause) {
     const aborted =

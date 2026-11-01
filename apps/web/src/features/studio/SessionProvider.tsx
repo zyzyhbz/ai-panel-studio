@@ -10,9 +10,9 @@ import {
   type Dispatch,
   type ReactNode,
 } from "react";
-import { useReducedMotion } from "motion/react";
+import { useReducedMotion } from "../../lib/useReducedMotion";
 
-import { endDiscussion, getDiscussion } from "../../api/discussions";
+import { endDiscussion, getDiscussion, confirmDiscussion } from "../../api/discussions";
 import { ApiError, friendlyMessage } from "../../api/client";
 import { SessionStream, type ConnectionState } from "../../api/sse";
 import { sessionReducer, type SessionAction } from "../../domain/reducer";
@@ -42,6 +42,8 @@ interface SessionContextValue {
   refresh: () => Promise<void>;
   reconnectNow: () => void;
   requestEnd: () => Promise<void>;
+  /** Confirm the roster; always re-reads the projection afterwards. */
+  confirm: () => Promise<void>;
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -185,8 +187,17 @@ export function SessionProvider({
       onDelta: (delta) => {
         buffer.append(delta.messageId, delta.delta);
       },
-      onSignal: () => {
-        /* stream.ready / caught_up currently need no state change */
+      onSignal: (signal) => {
+        const ready = signal.ready;
+        if (!ready) return;
+        // The connection often opens *after* the run already finished (mock
+        // LLM is instant, and a reload of a live session is seconds behind).
+        // `SessionStream` closes itself on a terminal status, so no backfill
+        // will arrive — rehydrate from REST or the stage stays an empty shell.
+        const terminal = ready.status === "ended" || ready.status === "failed";
+        if (terminal || ready.status !== viewRef.current.status) {
+          void refresh();
+        }
       },
       onState: (state, meta) => {
         setConnection({
@@ -250,6 +261,22 @@ export function SessionProvider({
       }
       throw error;
     }
+    // The summary may already be finished (fast mock); reconcile either way.
+    await refresh();
+  }, [discussionId, refresh]);
+
+  /**
+   * Confirm → immediately re-read the projection.
+   *
+   * Flipping the local status to `live` alone is not enough: the run can
+   * already be over by the time the stream opens, and `SessionStream` closes
+   * on a terminal `stream.ready` without backfilling. Without this second
+   * fetch the stage renders as an empty shell (BUG-01).
+   */
+  const confirm = useCallback(async () => {
+    await confirmDiscussion(discussionId);
+    dispatch({ type: "localStatus", status: "live" });
+    await refresh();
   }, [discussionId, refresh]);
 
   const value = useMemo<SessionContextValue>(
@@ -264,6 +291,7 @@ export function SessionProvider({
       refresh,
       reconnectNow,
       requestEnd,
+      confirm,
     }),
     [
       view,
@@ -275,6 +303,7 @@ export function SessionProvider({
       refresh,
       reconnectNow,
       requestEnd,
+      confirm,
     ],
   );
 

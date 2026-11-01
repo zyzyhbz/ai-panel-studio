@@ -9,8 +9,21 @@ if (!root) {
   throw new Error("Root element not found");
 }
 
-createRoot(root).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+const mount = root;
+
+async function bootstrap() {
+  // DEV-only mock backend, opt-in via `VITE_MOCK_API=1`.
+  // The guard is statically false in production, so the import is dropped.
+  if (import.meta.env.DEV && import.meta.env.VITE_MOCK_API === "1") {
+    const { installMockServer } = await import("./dev/mockServer");
+    installMockServer();
+  }
+
+  createRoot(mount).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  );
+}
+
+void bootstrap();
