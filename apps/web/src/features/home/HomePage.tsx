@@ -83,9 +83,9 @@ function AvatarStack({ item }: { item: DiscussionListItem }) {
 }
 
 function DiscussionCard({ item, now }: { item: DiscussionListItem; now: number }) {
-  const max = item.plannedTurns ?? 0;
+  const max = item.maxTurns ?? 36;
   const progressLabel =
-    max > 0 ? `${item.turnCount} / ${max} 轮` : `${item.turnCount} 轮`;
+    max > 0 ? `${item.turnCount} / 上限 ${max} 轮` : `${item.turnCount} 轮`;
 
   return (
     <Link

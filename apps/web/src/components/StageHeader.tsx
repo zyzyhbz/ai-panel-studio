@@ -82,7 +82,7 @@ export function StageHeader({
           {view.status === "summarizing" && <span>主持人正在收尾</span>}
           {view.status === "ended" && (
             <span>
-              已结束 · {view.turnCount} 轮 ·{" "}
+              已结束 · 实际 {view.turnCount} 轮 / 上限 {view.maxTurns ?? 36} 轮 ·{" "}
               {formatRelative(view.endedAt ?? undefined, now)}
             </span>
           )}

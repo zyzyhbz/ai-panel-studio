@@ -56,10 +56,10 @@ interface Point {
 
 /** Host at top centre; experts spread over the rest of the rim. */
 export function seatPoint(index: number, count: number, isHost: boolean): Point {
-  if (isHost) return { x: 50, y: 15 };
+  if (isHost) return { x: 50, y: 14 };
   const angle = -90 + ((index + 1) * 360) / (count + 1);
   const rad = (angle * Math.PI) / 180;
-  return { x: 50 + 38 * Math.cos(rad), y: 50 + 37 * Math.sin(rad) };
+  return { x: 50 + 34 * Math.cos(rad), y: 50 + 33 * Math.sin(rad) };
 }
 
 function Seat({
@@ -212,7 +212,7 @@ export function RoundTable({
           <p className="mt-1.5 text-[10px] text-ink-4 tabular-nums">
             {view.messages.length === 0
               ? "等待主持人开场"
-              : `第 ${progress.value} 轮${clock ? ` · ${clock}` : ""}`}
+              : `第 ${progress.value} 轮 · 上限 ${progress.max}${clock ? ` · ${clock}` : ""}`}
           </p>
         </div>
 

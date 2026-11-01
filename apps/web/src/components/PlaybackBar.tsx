@@ -28,6 +28,7 @@ function TransportShell({
 
 export function LiveBar({
   turnCount,
+  maxTurns,
   insightCount,
   status,
   sticky,
@@ -37,6 +38,7 @@ export function LiveBar({
   inline = false,
 }: {
   turnCount: number;
+  maxTurns?: number;
   insightCount: number;
   status?: "generating" | "ready" | "live" | "summarizing" | "ended" | "failed";
   sticky: StickyScroll;
@@ -61,7 +63,7 @@ export function LiveBar({
         />
         {label}
         <span className="text-ink-4">·</span>
-        <span className="tabular-nums">第 {turnCount} 轮</span>
+        <span className="tabular-nums">第 {turnCount} 轮 / 上限 {maxTurns ?? 36}</span>
         <span className="text-ink-4">·</span>
         <span className="tabular-nums">{insightCount} 条洞察</span>
       </span>

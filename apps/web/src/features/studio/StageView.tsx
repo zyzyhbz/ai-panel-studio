@@ -114,6 +114,7 @@ export function StageView({
     <LiveBar
       inline={tabbed}
       turnCount={view.turnCount}
+      maxTurns={view.maxTurns}
       status={view.status}
       insightCount={view.insights.length}
       sticky={sticky}

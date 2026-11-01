@@ -367,57 +367,26 @@
 
   .round-table {
     position: absolute;
-    left: 10%;
-    right: 10%;
-    top: 24%;
-    bottom: 21%;
+    left: 50%;
+    top: 50%;
+    width: min(56%, 450px);
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%);
     border-radius: 50%;
-    background:
-      radial-gradient(
-        ellipse at 50% 26%,
-        color-mix(in oklab, var(--color-wood) 78%, white 22%),
-        var(--color-wood) 52%,
-        var(--color-wood-deep) 100%
-      );
-    border: 1px solid
-      color-mix(in oklab, var(--color-wood-deep) 65%, transparent);
-    box-shadow:
-      inset 0 3px 0 color-mix(in oklab, white 20%, transparent),
-      inset 0 -26px 44px -26px rgba(0, 0, 0, 0.55),
-      0 26px 48px -26px rgba(0, 0, 0, 0.5);
+    /* Flat, translucent 2D disc — same material language as the seat cards. */
+    background: color-mix(in srgb, #c8a27a 44%, transparent);
+    border: 1px solid color-mix(in srgb, #a9825d 50%, transparent);
+    backdrop-filter: blur(10px);
+    box-shadow: none;
   }
 
-  /* Wooden rim — without it the ellipse reads as a rug, not a table. */
-  .round-table::before {
-    content: "";
-    position: absolute;
-    inset: -7px;
-    border-radius: 50%;
-    border: 7px solid
-      color-mix(in oklab, var(--color-wood-deep) 82%, black 8%);
-    opacity: 0.75;
-    box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.55);
-  }
-
+  .round-table::before,
   .round-table::after {
-    content: "";
-    position: absolute;
-    inset: 8%;
-    border-radius: 50%;
-    border: 1px dashed color-mix(in oklab, var(--color-on-wood) 26%, transparent);
-    opacity: 0.7;
+    display: none;
   }
 
   .round-spot {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background: radial-gradient(
-      circle at var(--spot-x, 50%) var(--spot-y, 50%),
-      color-mix(in oklab, var(--speaker, var(--color-live)) 30%, transparent),
-      transparent 58%
-    );
-    transition: background 520ms var(--ease-stage);
+    display: none;
   }
 
   .round-center {
@@ -425,7 +394,7 @@
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    width: 48%;
+    width: 38%;
     text-align: center;
     pointer-events: none;
   }
