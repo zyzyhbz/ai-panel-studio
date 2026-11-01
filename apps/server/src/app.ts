@@ -1,6 +1,9 @@
 import { randomUUID } from "node:crypto";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import Fastify, { type FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
+import fastifyStatic from "@fastify/static";
 import type { AppContext, CoreDeps, Logger } from "./context";
 import { loadConfig, type AppConfig } from "./config/env";
 import { openDb, type Db } from "./db/connection";
@@ -214,15 +217,26 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<BuiltApp>
     return toErrorBody(mapped, requestId);
   });
 
+  registerHealthRoutes(app, ctx);
+  registerDiscussionRoutes(app, ctx);
+  registerStreamRoute(app, ctx);
+
+  // Production/demo convenience: Fastify serves the built SPA when it exists.
+  // In dev, Vite (5173) proxies /api to Fastify, so this is a no-op.
+  const webDist = resolve(import.meta.dirname, "../../web/dist");
+  const hasWebDist = existsSync(resolve(webDist, "index.html"));
+  if (hasWebDist) {
+    await app.register(fastifyStatic, { root: webDist });
+  }
+
   app.setNotFoundHandler((request, reply) => {
+    if (hasWebDist && request.method === "GET" && !request.url.startsWith("/api")) {
+      return reply.type("text/html").sendFile("index.html");
+    }
     const mapped = new AppError("NOT_FOUND", "接口不存在");
     reply.code(mapped.status);
     return toErrorBody(mapped, String(request.id));
   });
-
-  registerHealthRoutes(app, ctx);
-  registerDiscussionRoutes(app, ctx);
-  registerStreamRoute(app, ctx);
 
   const stopWatchdog = options.recover === false ? () => undefined : sessions.startWatchdog();
 
