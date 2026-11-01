@@ -200,15 +200,14 @@ E2E 用本机 Chrome（`channel: "chrome"`），不下载 Playwright 浏览器�
 - [SSE 事件契约](docs/04-SSE事件契约.md)
 - [G1 契约决议 v1.0](docs/06-G1契约决议.md)
 - [Agent API](docs/AGENT-API.md)
-- [工作流说明](docs/WORKFLOW.md)
-- [多 Agent 协作与阶段映射](docs/08-多Agent协作与阶段映射.md)
-- [Prompt 记录](docs/PROMPT-LOG.md) / [runtime prompts](docs/prompts/runtime/README.md)
 - [真实 smoke](docs/REAL-SMOKE.md)
 - [5 会话/20 SSE 压力报告](docs/PERF-REPORT.md)
 - [深度讨论与圆桌 UI 改版方案](docs/09-深度讨论与圆桌UI改版.md)
 - [QA 最终报告](docs/QA-REPORT.md)
 - [QA 报告](docs/QA-G2-REPORT.md)
 - [交付清单](docs/05-交付清单.md)
+
+> 提交用的 `PROMPT-LOG.md` 与 `WORKFLOW.md` 随邮件附件发送，不放入公开仓库。
 
 ## 角色
 

@@ -34,5 +34,5 @@
 ## 与 devlog 的分工
 
 - `runtime/`（本目录）：**产品运行时**的 prompt，由 AI/Agent 维护。
-- `devlog/`：**开发过程**的 prompt（题目要求 ≥5 段，覆盖 SDD/DDD/TDD/E2E），由 PM 汇编进 `docs/PROMPT-LOG.md`。
+- `devlog/`：**开发过程**的 prompt（题目要求 ≥5 段，覆盖 SDD/DDD/TDD/E2E），由我汇编进邮件附件 `PROMPT-LOG.md`。
   两者不要混放，否则交付物对不上。

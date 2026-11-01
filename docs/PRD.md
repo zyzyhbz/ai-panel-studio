@@ -483,7 +483,7 @@ GET    /api/health
   4. 【E2E 阶段】系统级端到端测试与质量闭环
 - 第 5 段可为 Agent 行为/上下文工程或集成修复。
 - 每段后附 1–2 句：当时意图、遇到的挑战、如何引导 AI 修正。
-- 产出：`docs/PROMPT-LOG.md` + `docs/prompts/devlog/`。
+- 产出：邮件附件 `PROMPT-LOG.md` + `docs/prompts/devlog/`。
 
 ### 12.3 开发过程思路 & 工作流说明（1–1.5 页）
 
@@ -491,12 +491,12 @@ GET    /api/health
 - 说明实际工具链；题目问的是 Claude Code + DeepSeek V4 Pro，本次实际使用 DeepSeek Harness + deepseek-flash，需如实说明并给出等价映射。
 - 记录 2–3 个与 AI 协同的真实问题及解决路径。
 - 谈“工程化 AI 开发”的理解：拆解、契约、上下文、eval、测试、可观测、可回滚。
-- 产出：`docs/WORKFLOW.md`。
+- 产出：邮件附件 `WORKFLOW.md`。
 
 ### 12.4 提交方式
 
 - 邮箱：`<招聘邮箱>`
-- 主题：【远程作业提交】姓名
+- 主题：【远程作业提交】李荟源
 - 附件/链接：zip 包 + 文档（Prompt 记录 + 工作流说明）+ GitHub/Gitee 邀请
 - 截止：收到后 72 小时；本项目内部按 **2026-11-02 17:00 提交**，留 1 小时缓冲。
 - 人民币 10 元工具额度：开发期 API/工具成本控制在额度内，面试通过后按公司流程报销。
@@ -511,8 +511,8 @@ GET    /api/health
 | API 文档 | `03-API契约.md`、`04-SSE事件契约.md` |
 | 测试代码 | Vitest、Fastify inject、Playwright、压力/安全脚本 |
 | README | 运行指南、环境变量、技术选型、API 列表、能力与改进 |
-| Prompt 记录（≥5 段） | `docs/prompts/devlog/` + `PROMPT-LOG.md` |
-| 工作流说明（1–1.5 页） | `WORKFLOW.md` |
+| Prompt 记录（≥5 段） | `docs/prompts/devlog/` + 邮件附件 `PROMPT-LOG.md` |
+| 工作流说明（1–1.5 页） | 邮件附件 `WORKFLOW.md` |
 | Git 历史 | docs → schema → api → ui → tests → fix |
 | 提交邮件 | 按 §12.4 执行 |
 

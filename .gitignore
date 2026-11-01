@@ -41,3 +41,8 @@ Thumbs.db
 .vscode/
 .shots/
 apps/web/.shots/
+
+# Submission-only documents (sent by email, not published in the repo)
+docs/PROMPT-LOG.md
+docs/WORKFLOW.md
+docs/08-多Agent协作与阶段映射.md

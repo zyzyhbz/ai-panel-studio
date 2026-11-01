@@ -326,7 +326,7 @@ validateSpeech(text: string, decision: TurnDecision, recent: Message[]): SpeechC
 | [AGENT-BEHAVIOR.md](../AGENT-BEHAVIOR.md) | 定义"输出什么、怎么校验、失败怎么办"；本文件定义"用什么 prompt 产出" |
 | [04-SSE事件契约](../04-SSE事件契约.md) | prompt 的字段最终映射到 `turn.started` / `message.completed` / `insight.updated` / `summary.completed` |
 | [03-API契约](../03-API契约.md) | 阵容字段、错误码、幂等语义 |
-| [PROMPT-LOG.md](../PROMPT-LOG.md) | 开发过程 prompt（≥5 段），与本文件的运行时 prompt 分属两个交付物 |
+| 邮件附件 `PROMPT-LOG.md` | 开发过程 prompt（≥5 段），与本文件的运行时 prompt 分属两个交付物 |
 
 ---
 

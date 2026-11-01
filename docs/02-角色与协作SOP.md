@@ -114,8 +114,7 @@ Prompt/context 是高度迭代的工作，需要反复跑 eval、改上下文、
 - `docs/PRD.md`
 - `docs/API.md`、`docs/EVENTS.md`
 - `docs/TASKS.md`
-- `docs/PROMPT-LOG.md`（汇编）
-- `docs/WORKFLOW.md`
+- 提交用的 `PROMPT-LOG.md` / `WORKFLOW.md`（随邮件附件，不入库）
 - `README.md`
 
 ---
@@ -306,7 +305,7 @@ selectFallbackSpeaker(ctx): SpeakerId
 
 | 路径 | Owner | 说明 |
 | --- | --- | --- |
-| `docs/PRD.md`、`docs/TASKS.md`、`docs/WORKFLOW.md`、`README.md` | PM | 北极星与交付文档 |
+| `docs/PRD.md`、`docs/TASKS.md`、`README.md` | PM | 北极星与交付文档 |
 | `docs/API.md`、`docs/EVENTS.md`、`packages/shared/**` | PM | 契约，变更需 PM 批准 |
 | `docs/AGENT-BEHAVIOR.md`、`docs/prompts/**`、`packages/agent/**`、`evals/**` | AI/Agent | 行为、上下文、eval |
 | `apps/server/**`、`data/**`、`scripts/db/**` | 后端 | 运行时与数据 |
@@ -392,8 +391,8 @@ Prompt 文本本身的小迭代，AI/Agent 可以在不改变 AC 的前提下自
 | 开发文档（PRD/ER/API） | PM + 后端 | `docs/PRD.md`、ER 图、`docs/API.md` |
 | 测试代码 | 前端/后端/测试 | 单测、集成、E2E、压力 |
 | README | PM | 运行指南、环境变量、API 列表、能力与改进 |
-| Prompt 记录（≥5 段） | AI/Agent + PM | `docs/prompts/**` + `docs/PROMPT-LOG.md` |
-| 工作流说明（1–1.5 页） | PM | `docs/WORKFLOW.md` |
+| Prompt 记录（≥5 段） | AI/Agent + PM | `docs/prompts/**` + 邮件附件 `PROMPT-LOG.md` |
+| 工作流说明（1–1.5 页） | PM | 邮件附件 `WORKFLOW.md` |
 | Git 提交历史 | PM | 分层提交：docs → schema → api → ui → tests → fix |
 
 ---
